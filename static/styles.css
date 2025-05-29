@@ -1,0 +1,514 @@
+/* ========== BASE STYLES ========== */
+:root {
+  --primary-color: #52eeff;
+  --primary-hover: #3dd8e8;
+  --text-color: #ffffff;
+  --bg-dark: #0a192f;
+  --bg-light: rgba(255, 255, 255, 0.05);
+  --border-color: rgba(255, 255, 255, 0.1);
+  --success-color: #4caf50;
+  --error-color: #f44336;
+}
+
+body {
+  background-color: var(--bg-dark);
+  color: var(--text-color);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  line-height: 1.6;
+  font-size: 18px;
+  overflow-x: hidden;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* ========== LAYOUT STYLES ========== */
+.app-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+  box-sizing: border-box;
+}
+
+/* Header Section */
+.header {
+  width: 100%;
+  text-align: center;
+  padding: 2rem 1rem;
+  background-color: #0E1117;
+  position: relative;
+  box-sizing: border-box;
+}
+
+.header-content {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+.header-title {
+  text-align: center;
+  width: 100%;
+  font-size: 3.5rem;
+  font-weight: bold;
+  margin-bottom: 0.3rem;
+  color: var(--primary-color);
+  padding: 0 1rem;
+  box-sizing: border-box;
+}
+
+.header-subtitle {
+  color: white;
+  font-size: min(2.2rem, 3.5vw);
+  margin: 0 0 1.5rem 0;
+  font-weight: bold;
+  line-height: 1.3;
+  width: 100%;
+  display: block;
+  text-align: center;
+  padding: 0 1rem;
+  box-sizing: border-box;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.header-description {
+  text-align: center;
+  width: 100%;
+  max-width: 600px;
+  color: white;
+  font-size: 1rem;
+  margin: 1rem auto;
+  line-height: 1.5;
+  opacity: 0.9;
+  padding: 0 1rem;
+  box-sizing: border-box;
+}
+
+.header-divider {
+  width: 50%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--primary-color), transparent);
+  margin: 1rem auto;
+}
+
+/* Form Container */
+.st-emotion-cache-13na8ym.e1kosxz21 {
+  width: 100% !important;
+  max-width: 850px !important;
+  margin: 0 auto !important;
+  padding: 0 1rem !important;
+  box-sizing: border-box !important;
+}
+
+.form-container {
+  background: var(--bg-light);
+  border-radius: 12px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Form Elements Container */
+.block-container {
+  max-width: 90%;
+  width: 100%;
+  padding: 2rem 1rem;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+/* Input Fields Container */
+.stTextInput, .stTextArea, .stDateInput {
+  width: 100% !important;
+  margin-bottom: 1rem !important;
+}
+
+/* Input Fields */
+.stTextInput>div>div>input,
+.stTextArea>div>textarea,
+.stDateInput>div>div>input {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid var(--border-color) !important;
+  color: var(--text-color) !important;
+  border-radius: 6px !important;
+  padding: 0.75rem 1rem !important;
+  transition: all 0.3s ease !important;
+  font-size: 0.95rem !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+/* Expander Styles */
+.stExpander {
+  border-radius: 8px !important;
+  margin-bottom: 1.5rem !important;
+  width: 100% !important;
+  max-width: 850px !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  box-sizing: border-box !important;
+}
+
+/* Column Layout */
+.st-emotion-cache-1v0mbdj {
+  padding: 0.5rem !important;
+  box-sizing: border-box !important;
+  width: 100% !important;
+}
+
+/* Success and Error Messages */
+.element-container:has(div.stAlert) {
+  width: 100% !important;
+  max-width: 850px !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  padding: 0 1rem !important;
+  box-sizing: border-box !important;
+}
+
+/* Download Button Container */
+.element-container:has(div.stDownloadButton) {
+  width: 100% !important;
+  max-width: 850px !important;
+  margin: 1rem auto !important;
+  padding: 0 1rem !important;
+  box-sizing: border-box !important;
+  display: flex !important;
+  justify-content: center !important;
+}
+
+/* Project Section */
+.project-section {
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background: rgba(82, 238, 255, 0.05);
+  border-radius: 8px;
+  border-left: 3px solid var(--primary-color);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Button Row */
+.button-row {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin: 1rem 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Generate Resume Button Container */
+.generate-btn-container {
+  display: flex;
+  justify-content: center;
+  margin: 2rem 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Media Queries for Responsive Design */
+@media screen and (max-width: 768px) {
+  .block-container {
+    max-width: 100%;
+    padding: 1rem;
+  }
+  
+  .stExpander {
+    margin: 1rem 0 !important;
+  }
+  
+  .stTextInput>div>div>input,
+  .stTextArea>div>textarea,
+  .stDateInput>div>div>input {
+    font-size: 16px !important; /* Better for mobile */
+  }
+}
+
+/* ========== BUTTON STYLES ========== */
+/* Base Button Styles */
+.stButton>button {
+  background-color: var(--primary-color) !important;
+  color: #000 !important;
+  border: none !important;
+  border-radius: 6px !important;
+  padding: 0.5rem 1rem !important;
+  font-weight: 600 !important;
+  transition: all 0.3s ease !important;
+  margin: 0 !important;
+  min-width: 120px;
+  font-size: 1.2rem;
+}
+
+.stButton>button:hover {
+  background-color: var(--primary-hover) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 8px rgba(82, 238, 255, 0.3) !important;
+}
+
+/* ========== FORM ELEMENTS ========== */
+/* Section Titles */
+.section-title {
+  color: var(--primary-color);
+  font-size: 1.8rem;
+  margin: 2rem 0 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+/* Add styles for placeholders */
+.stTextInput>div>div>input::placeholder,
+.stTextArea>div>textarea::placeholder,
+.stDateInput>div>div>input::placeholder {
+  font-size: 0.95rem !important;
+  color: rgba(255, 255, 255, 0.6) !important;
+}
+
+.stTextInput>div>div>input:focus,
+.stTextArea>div>textarea:focus,
+.stDateInput>div>div>input:focus {
+  border-color: var(--primary-color) !important;
+  box-shadow: 0 0 0 2px rgba(82, 238, 255, 0.2) !important;
+}
+
+.stTextArea>div>textarea {
+  min-height: 100px !important;
+}
+
+/* Alerts and Messages */
+.stAlert {
+  border-radius: 8px !important;
+  padding: 1rem !important;
+}
+
+.stAlert [data-testid="stMarkdownContainer"] {
+  color: var(--text-color) !important;
+}
+
+.stSuccess {
+  background-color: rgba(76, 175, 80, 0.1) !important;
+  border-left: 4px solid var(--success-color) !important;
+}
+
+.stError {
+  background-color: rgba(244, 67, 54, 0.1) !important;
+  border-left: 4px solid var(--error-color) !important;
+}
+
+/* Download Button */
+.stDownloadButton>button {
+  background-color: var(--primary-color) !important;
+  color: #000 !important;
+  font-weight: 600 !important;
+  width: 100% !important;
+  margin-top: 1.5rem !important;
+  padding: 0.75rem !important;
+}
+
+/* ========== STREAMLIT OVERRIDES ========== */
+/* Main content area */
+.st-emotion-cache-ocqkz7 {
+  max-width: 1200px !important;
+  padding: 0 1rem !important;
+}
+
+/* Hide decorative elements */
+.st-emotion-cache-1r6slb0 {
+  display: none !important;
+}
+
+/* ========== UTILITY CLASSES ========== */
+.text-center {
+  text-align: center !important;
+}
+
+.mt-2 {
+  margin-top: 2rem !important;
+}
+
+.mb-2 {
+  margin-bottom: 2rem !important;
+}
+
+/* ========== SCROLLBAR ========== */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-dark);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--primary-color);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary-hover);
+}
+
+/* Main Container Width Control */
+.main .block-container {
+  max-width: 850px !important;
+  width: 100% !important;
+  padding: 2rem 1rem !important;
+  margin: 0 auto !important;
+  box-sizing: border-box !important;
+}
+
+/* Form Stability */
+.stForm {
+  width: 100% !important;
+  max-width: 850px !important;
+  margin: 0 auto !important;
+  box-sizing: border-box !important;
+}
+
+/* Prevent Width Changes on Interaction */
+.element-container {
+  width: 100% !important;
+  max-width: 850px !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  box-sizing: border-box !important;
+}
+
+/* Button Container Stability */
+.stButton {
+  width: 100% !important;
+  max-width: 850px !important;
+  margin: 0 auto !important;
+  box-sizing: border-box !important;
+}
+
+/* Form Fields Container */
+.row-widget {
+  width: 100% !important;
+  max-width: 850px !important;
+  margin: 0 auto !important;
+  box-sizing: border-box !important;
+}
+
+/* Streamlit Container Override */
+.css-1d391kg, .css-1p1nwyz {
+  width: 100% !important;
+  max-width: 850px !important;
+  margin: 0 auto !important;
+  padding: 0 1rem !important;
+  box-sizing: border-box !important;
+}
+
+/* Expander Width Control */
+.streamlit-expanderContent {
+  width: 100% !important;
+  max-width: 850px !important;
+  margin: 0 auto !important;
+  box-sizing: border-box !important;
+}
+
+/* Column Container Stability */
+.css-1r6slb0, .css-12w0qpk {
+  width: 100% !important;
+  max-width: 850px !important;
+  margin: 0 auto !important;
+  box-sizing: border-box !important;
+}
+
+/* Force Stable Width on Re-render */
+.stMarkdown, .stText {
+  width: 100% !important;
+  max-width: 850px !important;
+  margin: 0 auto !important;
+  box-sizing: border-box !important;
+}
+
+/* Prevent Column Width Changes */
+[data-testid="column"] {
+  width: 100% !important;
+  box-sizing: border-box !important;
+  padding: 0.5rem !important;
+}
+
+/* Ensure Form Groups Stay Stable */
+.stSelectbox, .stMultiSelect {
+  width: 100% !important;
+  max-width: 850px !important;
+  margin: 0 auto !important;
+  box-sizing: border-box !important;
+}
+
+/* Resume Analysis Section */
+.score-card {
+    background: rgba(82, 238, 255, 0.1);
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    border: 1px solid var(--primary-color);
+    text-align: center;
+}
+
+.score-card h3 {
+    color: var(--primary-color);
+    font-size: 2rem;
+    margin: 0;
+}
+
+/* Progress Bars */
+.stProgress > div > div {
+    background-color: var(--primary-color) !important;
+}
+
+.stProgress {
+    margin-bottom: 1rem !important;
+}
+
+/* File Uploader */
+.stFileUploader {
+    border: 2px dashed var(--border-color);
+    border-radius: 8px;
+    padding: 2rem;
+    text-align: center;
+    margin-bottom: 1.5rem;
+}
+
+.stFileUploader:hover {
+    border-color: var(--primary-color);
+}
+
+/* Tabs */
+.stTabs {
+    background: var(--bg-light);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 2rem;
+}
+
+.stTab {
+    background-color: transparent !important;
+    color: var(--text-color) !important;
+}
+
+.stTab[aria-selected="true"] {
+    background-color: var(--primary-color) !important;
+    color: #000 !important;
+}
+
+/* Warning Messages */
+.stWarning {
+    background-color: rgba(255, 193, 7, 0.1) !important;
+    border-left: 4px solid #ffc107 !important;
+}
