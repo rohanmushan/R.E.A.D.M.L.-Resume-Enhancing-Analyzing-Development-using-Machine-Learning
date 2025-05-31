@@ -101,12 +101,7 @@ Check out our video demo: [Watch on YouTube](https://youtube.com/your-demo-link)
    GEMINI_API_KEY = "your-gemini-api-key"
    ```
 
-6. **Initialize Database**
-   ```bash
-   alembic upgrade head
-   ```
-
-7. **Run the Application**
+6. **Run the Application**
    ```bash
    streamlit run app.py
    ```
@@ -220,6 +215,3 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - Project Link: [git@github.com:rohanmushan/R.E.A.D.M.L.-Resume-Enhancing-Analysing-Development-using-Machine-Learning-.git](https://github.com/yourusername/R.E.A.D.M.L)
 - Report Issues: [Issue Tracker](https://github.com/yourusername/R.E.A.D.M.L/issues)
 - Documentation: [Wiki](https://github.com/yourusername/R.E.A.D.M.L/wiki)
-
----
-*Note: Replace placeholder values (rohanmushan, rohanmushan08@gmail.com, etc.) with actual information before publishing.* 
