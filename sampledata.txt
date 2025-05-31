@@ -18,14 +18,14 @@ Git, github, Hadoop, Spark, VS code.
 
 1. Portfolio
 Jan 2022 - May 2022
-HTML, CSS, JS, React, node.Js
+Jan 2022 - May 2022
 i have made my Portfolio to interact with more people and for the more reach, i have made my Portfolio to interact with more people and for the more reach, i have made my Portfolio to interact with more people and for the more reach.
 
-UI designer
-UX designer
-Tester
-Deployer
-Developer
+    UI designer
+    UX designer
+    Tester
+    Deployer
+    Developer
 
 Cordinator of multi-clg event in our Collage
 Comlpeted the Google Data analyst course
