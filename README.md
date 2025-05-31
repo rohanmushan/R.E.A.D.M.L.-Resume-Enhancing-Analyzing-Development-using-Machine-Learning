@@ -19,7 +19,6 @@ Check out our video demo: [Watch on YouTube](https://youtube.com/your-demo-link)
 - [Example Resume 1](examples/resume1.pdf) - Software Engineer Resume
 - [Example Resume 2](examples/resume2.pdf) - Data Scientist Resume
 
-![R.E.A.D.M.L. Logo](assets/logo.png) *(If you have a logo)*
 
 ## 🌟 Key Features
 
@@ -72,17 +71,17 @@ Check out our video demo: [Watch on YouTube](https://youtube.com/your-demo-link)
 
 1. **Clone the Repository**
    ```bash
-   git clone https://github.com/yourusername/R.E.A.D.M.L.git
-   cd R.E.A.D.M.L
+   git clone hhttps://github.com/rohanmushan/R.E.A.D.M.L.-Resume-Enhancing-Analysing-Development-using-Machine-Learning-.git
+   cd R.E.A.D.M.L.-Resume-Enhancing-Analysing-Development-using-Machine-Learning
    ```
 
 2. **Set Up Virtual Environment**
    ```bash
-   python -m venv venv
+   python -m venv readml
    # For Windows
-   .\venv\Scripts\activate
+   .\readml\Scripts\activate
    # For Unix/MacOS
-   source venv/bin/activate
+   source readml/bin/activate
    ```
 
 3. **Install Dependencies**
@@ -100,9 +99,6 @@ Check out our video demo: [Watch on YouTube](https://youtube.com/your-demo-link)
    ```toml
    [api_keys]
    GEMINI_API_KEY = "your-gemini-api-key"
-
-   [database]
-   DATABASE_URL = "postgresql://user:password@localhost:5432/readml"
    ```
 
 6. **Initialize Database**
@@ -124,7 +120,12 @@ R.E.A.D.M.L/
 ├── requirements.txt       # Project dependencies
 ├── .streamlit/           # Streamlit configuration
 ├── static/              # CSS and static assets
+│   └── styles.css
+├──assets/
+│   ├── SS-1.png
+    └── SS-1.png
 ├── templates/           # HTML templates
+│   └── resumeTemplate.docx # Resume template
 ├── utils/              # Utility modules
 │   ├── pdf_generator.py   # PDF generation utilities
 │   ├── gemini_utils.py   # AI integration
@@ -133,11 +134,6 @@ R.E.A.D.M.L/
 ```
 
 ## 🔧 Configuration
-
-### Database Setup
-1. Create a PostgreSQL database
-2. Update DATABASE_URL in `.streamlit/secrets.toml`
-3. Run migrations: `alembic upgrade head`
 
 ### API Keys
 1. Get a Gemini API key from Google Cloud Console
@@ -203,23 +199,13 @@ python utils/pdf_generator.py --template modern --output resume.pdf
 python utils/resume_parser.py --input existing_resume.pdf
 ```
 
-## 🤝 Contributing
-
-We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md) for details.
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## 👥 Authors
 
-- **Your Name** - *Initial work* - [YourGitHub](https://github.com/yourusername)
+- **Rohan Mushan** - *Initial work* - [YourGitHub](http://github.com/rohanmushan)
 
 ## 🙏 Acknowledgments
 
@@ -230,10 +216,10 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📧 Contact & Support
 
-- Project Maintainer: [your.email@example.com](mailto:your.email@example.com)
-- Project Link: [https://github.com/yourusername/R.E.A.D.M.L](https://github.com/yourusername/R.E.A.D.M.L)
+- Project Maintainer: [rohanmushan08@gmail.com](mailto:rohanmushan08@gmail.com)
+- Project Link: [git@github.com:rohanmushan/R.E.A.D.M.L.-Resume-Enhancing-Analysing-Development-using-Machine-Learning-.git](https://github.com/yourusername/R.E.A.D.M.L)
 - Report Issues: [Issue Tracker](https://github.com/yourusername/R.E.A.D.M.L/issues)
 - Documentation: [Wiki](https://github.com/yourusername/R.E.A.D.M.L/wiki)
 
 ---
-*Note: Replace placeholder values (yourusername, your.email@example.com, etc.) with actual information before publishing.* 
+*Note: Replace placeholder values (rohanmushan, rohanmushan08@gmail.com, etc.) with actual information before publishing.* 
