@@ -34,10 +34,13 @@ body {
 .header {
   width: 100%;
   text-align: center;
-  padding: 2rem 1rem;
-  background-color: #0E1117;
   position: relative;
   box-sizing: border-box;
+  max-width: 1000px;
+  margin: 0 auto 2rem;
+  padding: 4rem;
+  background: transparent;
+  border: none;
 }
 
 .header-content {
@@ -102,20 +105,19 @@ body {
 /* Form Container */
 .st-emotion-cache-13na8ym.e1kosxz21 {
   width: 100% !important;
-  max-width: 850px !important;
+  max-width: 1000px !important;
   margin: 0 auto !important;
-  padding: 0 1rem !important;
   box-sizing: border-box !important;
 }
 
 .form-container {
-  background: var(--bg-light);
-  border-radius: 12px;
-  padding: 2rem;
-  margin-bottom: 2rem;
-  border: 1px solid var(--border-color);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+  max-width: 1000px;
   width: 100%;
+  margin: 0 auto;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
   box-sizing: border-box;
 }
 
@@ -131,33 +133,33 @@ body {
 /* Input Fields Container */
 .stTextInput, .stTextArea, .stDateInput {
   width: 100% !important;
-  margin-bottom: 1rem !important;
+  margin-bottom: 1.5rem !important;
+  max-width: none !important;
 }
 
 /* Input Fields */
 .stTextInput>div>div>input,
 .stTextArea>div>textarea,
 .stDateInput>div>div>input {
+  width: 100% !important;
+  max-width: none !important;
   background-color: rgba(255, 255, 255, 0.05) !important;
   border: 1px solid var(--border-color) !important;
   color: var(--text-color) !important;
   border-radius: 6px !important;
-  padding: 0.75rem 1rem !important;
+  padding: 0.5rem !important;
   transition: all 0.3s ease !important;
-  font-size: 0.95rem !important;
-  width: 100% !important;
+  font-size: 1rem !important;
   box-sizing: border-box !important;
 }
 
 /* Expander Styles */
 .stExpander {
-  border-radius: 8px !important;
-  margin-bottom: 1.5rem !important;
   width: 100% !important;
-  max-width: 850px !important;
-  margin-left: auto !important;
-  margin-right: auto !important;
+  max-width: 1200px !important;
+  margin: 0 auto !important;
   box-sizing: border-box !important;
+  padding: 2rem !important;
 }
 
 /* Column Layout */
@@ -191,12 +193,14 @@ body {
 /* Project Section */
 .project-section {
   margin-bottom: 2rem;
-  padding: 1.5rem;
+  padding: 2rem;
   background: rgba(82, 238, 255, 0.05);
   border-radius: 8px;
   border-left: 3px solid var(--primary-color);
-  width: 100%;
-  box-sizing: border-box;
+  width: 100% !important;
+  max-width: 1000px !important;
+  margin: 0 auto !important;
+  box-sizing: border-box !important;
 }
 
 /* Button Row */
@@ -261,11 +265,10 @@ body {
 /* ========== FORM ELEMENTS ========== */
 /* Section Titles */
 .section-title {
-  color: var(--primary-color);
-  font-size: 1.8rem;
-  margin: 2rem 0 1rem;
-  padding-bottom: 0.5rem;
-  border-bottom: 1px solid var(--border-color);
+  margin: 2rem 0 1.5rem;
+  padding: 0 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
 /* Add styles for placeholders */
@@ -331,7 +334,7 @@ body {
 
 /* ========== UTILITY CLASSES ========== */
 .text-center {
-  text-align: center !important;
+  text-align: center;
 }
 
 .mt-2 {
@@ -363,9 +366,8 @@ body {
 
 /* Main Container Width Control */
 .main .block-container {
-  max-width: 850px !important;
+  max-width: 1000px !important;
   width: 100% !important;
-  padding: 2rem 1rem !important;
   margin: 0 auto !important;
   box-sizing: border-box !important;
 }
@@ -373,7 +375,7 @@ body {
 /* Form Stability */
 .stForm {
   width: 100% !important;
-  max-width: 850px !important;
+  max-width: 1000px !important;
   margin: 0 auto !important;
   box-sizing: border-box !important;
 }
@@ -381,16 +383,15 @@ body {
 /* Prevent Width Changes on Interaction */
 .element-container {
   width: 100% !important;
-  max-width: 850px !important;
-  margin-left: auto !important;
-  margin-right: auto !important;
+  max-width: 1000px !important;
+  margin: 0 auto !important;
   box-sizing: border-box !important;
 }
 
 /* Button Container Stability */
 .stButton {
   width: 100% !important;
-  max-width: 850px !important;
+  max-width: 1000px !important;
   margin: 0 auto !important;
   box-sizing: border-box !important;
 }
@@ -398,7 +399,7 @@ body {
 /* Form Fields Container */
 .row-widget {
   width: 100% !important;
-  max-width: 850px !important;
+  max-width: 1000px !important;
   margin: 0 auto !important;
   box-sizing: border-box !important;
 }
@@ -406,16 +407,15 @@ body {
 /* Streamlit Container Override */
 .css-1d391kg, .css-1p1nwyz {
   width: 100% !important;
-  max-width: 850px !important;
+  max-width: 1000px !important;
   margin: 0 auto !important;
-  padding: 0 1rem !important;
   box-sizing: border-box !important;
 }
 
 /* Expander Width Control */
 .streamlit-expanderContent {
   width: 100% !important;
-  max-width: 850px !important;
+  max-width: 1000px !important;
   margin: 0 auto !important;
   box-sizing: border-box !important;
 }
@@ -423,7 +423,7 @@ body {
 /* Column Container Stability */
 .css-1r6slb0, .css-12w0qpk {
   width: 100% !important;
-  max-width: 850px !important;
+  max-width: 1350px !important;
   margin: 0 auto !important;
   box-sizing: border-box !important;
 }
@@ -431,7 +431,7 @@ body {
 /* Force Stable Width on Re-render */
 .stMarkdown, .stText {
   width: 100% !important;
-  max-width: 850px !important;
+  max-width: 1350px !important;
   margin: 0 auto !important;
   box-sizing: border-box !important;
 }
@@ -439,76 +439,84 @@ body {
 /* Prevent Column Width Changes */
 [data-testid="column"] {
   width: 100% !important;
+  padding: 0 !important;
   box-sizing: border-box !important;
-  padding: 0.5rem !important;
 }
 
 /* Ensure Form Groups Stay Stable */
 .stSelectbox, .stMultiSelect {
   width: 100% !important;
-  max-width: 850px !important;
+  max-width: 1000px !important;
   margin: 0 auto !important;
   box-sizing: border-box !important;
 }
 
-/* Resume Analysis Section */
-.score-card {
-    background: rgba(82, 238, 255, 0.1);
-    border-radius: 8px;
-    padding: 1.5rem;
-    margin-bottom: 1.5rem;
-    border: 1px solid var(--primary-color);
-    text-align: center;
+/* Make input fields full width of their containers */
+.stTextInput > div,
+.stTextArea > div,
+.stDateInput > div {
+  width: 100% !important;
+  max-width: none !important;
 }
 
-.score-card h3 {
-    color: var(--primary-color);
-    font-size: 2rem;
-    margin: 0;
+/* Ensure columns take full width */
+[data-testid="column"] {
+  width: 100% !important;
+  padding: 0 !important;
+  box-sizing: border-box !important;
 }
 
-/* Progress Bars */
-.stProgress > div > div {
-    background-color: var(--primary-color) !important;
-}
-
-.stProgress {
-    margin-bottom: 1rem !important;
-}
-
-/* File Uploader */
-.stFileUploader {
-    border: 2px dashed var(--border-color);
-    border-radius: 8px;
-    padding: 2rem;
-    text-align: center;
-    margin-bottom: 1.5rem;
-}
-
-.stFileUploader:hover {
-    border-color: var(--primary-color);
+/* Project Section */
+.project-section {
+  width: 100% !important;
+  max-width: 1000px !important;
+  margin: 0 auto !important;
+  box-sizing: border-box !important;
 }
 
 /* Tabs */
 .stTabs {
-    background: var(--bg-light);
-    border-radius: 8px;
-    padding: 1rem;
-    margin-bottom: 2rem;
+  width: 100% !important;
+  max-width: 1000px !important;
+  margin: 0 auto !important;
+  box-sizing: border-box !important;
 }
 
-.stTab {
-    background-color: transparent !important;
-    color: var(--text-color) !important;
+/* Analysis Results */
+.analysis-results {
+  width: 100% !important;
+  max-width: 1000px !important;
+  margin: 0 auto !important;
+  box-sizing: border-box !important;
 }
 
-.stTab[aria-selected="true"] {
-    background-color: var(--primary-color) !important;
-    color: #000 !important;
+/* Override any max-width constraints */
+div[class*="css"] div[class*="css-"] {
+  width: 100% !important;
+  max-width: none !important;
 }
 
-/* Warning Messages */
-.stWarning {
-    background-color: rgba(255, 193, 7, 0.1) !important;
-    border-left: 4px solid #ffc107 !important;
+/* Adjust the form layout container */
+.stForm > div:first-child {
+  max-width: 1000px !important;
+  margin: 0 auto !important;
+}
+
+/* Style form sections */
+.section-container {
+  width: 100% !important;
+  max-width: 1000px !important;
+  margin: 0 auto !important;
+}
+
+/* Ensure expander takes full width */
+div[data-testid="stExpander"] {
+  max-width: 1000px !important;
+  width: 100% !important;
+  margin: 0 auto !important;
+}
+
+/* Add some spacing between sections */
+.stTabs {
+  padding: 0 !important;
 }

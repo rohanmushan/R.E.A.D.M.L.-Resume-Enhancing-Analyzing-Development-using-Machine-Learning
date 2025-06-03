@@ -30,6 +30,12 @@ class ResumeParser:
             'publications', 'languages', 'interests', 'volunteer'
         ]
         
+        # Add role-related keywords
+        self.ROLE_KEYWORDS = [
+            'seeking', 'target', 'desired', 'role', 'position',
+            'applying', 'job', 'opportunity', 'career'
+        ]
+        
         # Enhanced skills database with categories
         self.SKILLS_DB = {
             'programming_languages': {
@@ -106,6 +112,44 @@ class ResumeParser:
             st.error("Unsupported file format. Please upload PDF or DOCX files.")
             return ""
 
+    def extract_target_role(self, text: str) -> str:
+        """Extract target role from resume text"""
+        # First try to find explicit mentions
+        doc = self.nlp(text.lower())
+        
+        # Look for patterns like "Seeking [role]" or "Target role: [role]"
+        for sent in doc.sents:
+            sent_text = sent.text.lower()
+            if any(keyword in sent_text for keyword in self.ROLE_KEYWORDS):
+                # Try to extract the role after the keyword
+                for keyword in self.ROLE_KEYWORDS:
+                    if keyword in sent_text:
+                        role_start = sent_text.find(keyword) + len(keyword)
+                        role = sent_text[role_start:].strip('.: ')
+                        if role:
+                            return role.title()
+        
+        # Look in the objective or summary section
+        sections = self.extract_sections(text)
+        for section_name in ['objective', 'summary']:
+            if section_name in sections:
+                section_text = sections[section_name].lower()
+                doc = self.nlp(section_text)
+                
+                # Look for job titles or role mentions
+                for sent in doc.sents:
+                    sent_text = sent.text.lower()
+                    if any(keyword in sent_text for keyword in self.ROLE_KEYWORDS):
+                        # Extract the part after the keyword
+                        for keyword in self.ROLE_KEYWORDS:
+                            if keyword in sent_text:
+                                role_start = sent_text.find(keyword) + len(keyword)
+                                role = sent_text[role_start:].strip('.: ')
+                                if role:
+                                    return role.title()
+        
+        return None
+
     def extract_sections(self, text: str) -> Dict[str, str]:
         """Extract different sections from the resume text"""
         sections = {}
@@ -160,6 +204,11 @@ class ResumeParser:
             
             if degree_info:
                 sections['degree'] = degree_info
+
+        # Extract target role
+        target_role = self.extract_target_role(text)
+        if target_role:
+            sections['role'] = target_role
             
         return sections
 

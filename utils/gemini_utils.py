@@ -58,41 +58,41 @@ def analyze_resume_content(model, resume_data: Dict) -> Dict:
         CURRENT SUMMARY: {resume_data['profile_summary']['summary']}
         SKILLS: {', '.join(resume_data['skills']['programming'] + resume_data['skills'].get('frameworks', []))}
         
-        Provide detailed, actionable feedback in the following categories:
+        Provide detailed, actionable feedback in the following categories. Use complete sentences and proper punctuation:
 
-        1. Enhanced Version:
-        - Rewrite the summary to be more impactful
-        - Include industry-specific keywords
-        - Emphasize quantifiable achievements
-        - Align with {resume_data['profile_summary']['target_role']} role requirements
-        - Maintain professional tone and active voice
+        1. Profile Strengths:
+        • List the strong points of the current profile
+        • Highlight effective elements
+        • Note any standout achievements
+        • Identify well-presented skills
 
-        2. Key Improvements:
-        - Identify gaps between current profile and industry standards
-        - Suggest specific additions that would strengthen the profile
-        - Point out any red flags or areas needing clarification
-        - Recommend industry-specific certifications or qualifications
+        2. Areas for Improvement:
+        • Point out specific gaps in the profile
+        • Identify missing key elements
+        • Suggest concrete additions
+        • Note any unclear or weak points
 
-        3. Missing Keywords and Market Alignment:
-        - List essential keywords for {resume_data['profile_summary']['target_role']} roles
-        - Identify trending skills in the industry
-        - Suggest relevant technical competencies
-        - Include both hard and soft skills
+        3. Industry Alignment:
+        • Compare with {resume_data['profile_summary']['target_role']} standards
+        • List missing industry keywords
+        • Suggest relevant certifications
+        • Recommend specific technical skills
 
-        4. Metrics and Achievements:
-        - Suggest specific quantifiable metrics
-        - Provide industry-standard KPIs
-        - Recommend achievement formats
-        - Include relevant benchmarks
+        4. Content Enhancement:
+        • Provide specific metrics to add
+        • Suggest stronger action verbs
+        • Recommend achievement formats
+        • List quantifiable examples
 
-        5. ATS Optimization:
-        - Evaluate keyword density
-        - Check industry terminology usage
-        - Assess format effectiveness
-        - Suggest structural improvements
+        5. Optimization Tips:
+        • Suggest structural improvements
+        • Recommend format changes
+        • Propose keyword placements
+        • Advise on content organization
 
-        Format your response with clear sections and bullet points for easy implementation.
-        Focus on providing specific, actionable recommendations rather than general advice.
+        Format your response with clear bullet points and complete sentences.
+        Avoid line breaks within sentences.
+        Use proper punctuation and capitalization.
         """
         
         profile_response = model.generate_content(profile_prompt)
@@ -110,40 +110,41 @@ def analyze_resume_content(model, resume_data: Dict) -> Dict:
         FRAMEWORKS: {', '.join(resume_data['skills'].get('frameworks', []))}
         OTHER SKILLS: {', '.join(resume_data['skills'].get('other', []))}
         
-        Provide detailed analysis in these areas:
+        Provide a detailed analysis in these areas. Use complete sentences and proper punctuation:
 
-        1. Critical Missing Skills:
-        - Identify must-have technical skills for the role
-        - List essential frameworks and tools
-        - Suggest complementary technologies
-        - Highlight any critical gaps
+        1. Core Technical Skills:
+        • Evaluate current technical skills
+        • Identify missing essential skills
+        • Suggest priority additions
+        • Rate skill relevance
 
-        2. Emerging Technologies:
-        - List trending technologies in this field
-        - Suggest future-proof skill additions
-        - Identify high-demand certifications
-        - Recommend learning priorities
+        2. Framework & Tool Analysis:
+        • Assess framework knowledge
+        • Recommend additional tools
+        • Suggest version upgrades
+        • Note obsolete technologies
 
-        3. Skill Organization:
-        - Suggest optimal grouping of skills
-        - Prioritize skills by importance
-        - Recommend skill presentation format
-        - Identify obsolete or outdated skills
+        3. Industry Requirements:
+        • List must-have skills for the role
+        • Identify emerging technologies
+        • Suggest certification paths
+        • Note competitive advantages
 
-        4. Competitive Edge:
-        - Compare against industry standards
-        - Identify unique skill combinations
-        - Suggest specialized certifications
-        - Recommend advanced competencies
+        4. Skill Development Plan:
+        • Prioritize learning objectives
+        • Recommend learning resources
+        • Suggest timeline for upskilling
+        • List quick wins
 
-        5. Skill Development Roadmap:
-        - Prioritize learning objectives
-        - Suggest certification timeline
-        - Recommend skill upgrade path
-        - Identify quick-win improvements
+        5. Market Positioning:
+        • Compare against market demands
+        • Identify unique combinations
+        • Suggest specialization paths
+        • Note high-demand areas
 
-        Provide specific, actionable feedback that will maximize marketability for {resume_data['profile_summary']['target_role']} positions.
-        Include examples and industry benchmarks where relevant.
+        Format your response with clear bullet points and complete sentences.
+        Avoid line breaks within sentences.
+        Use proper punctuation and capitalization.
         """
         
         skills_response = model.generate_content(skills_prompt)
@@ -187,42 +188,43 @@ def get_ats_optimization(model, resume_data: Dict) -> Dict:
         - Projects: {json.dumps([p['title'] for p in resume_data['projects']])}
         - Education: {resume_data['education']['degree']} from {resume_data['education']['university']}
 
-        Provide a comprehensive ATS analysis with the following structure:
+        Provide a comprehensive ATS analysis with the following structure. Use complete sentences and proper punctuation:
 
-        1. ATS Compatibility Score (0-100):
-        Calculate based on:
-        - Keyword relevance and density (30 points)
-        - Job title alignment (20 points)
-        - Skills match with industry standards (25 points)
-        - Format and structure (15 points)
-        - Education and qualifications (10 points)
-        Show subtotal for each category and final score.
+        1. ATS Score Analysis:
+        • Overall Score: [0-100]
+        • Keyword Relevance: [0-30]
+        • Role Alignment: [0-20]
+        • Skills Match: [0-25]
+        • Format Quality: [0-15]
+        • Education Match: [0-10]
 
-        2. Keyword Analysis:
-        - List all relevant keywords found
-        - Identify critical missing keywords
-        - Suggest industry-specific terms to add
-        - Analyze keyword placement and frequency
+        2. Keyword Optimization:
+        • List found keywords
+        • Note missing keywords
+        • Suggest additions
+        • Recommend placements
 
-        3. Format and Structure:
-        - Evaluate section organization
-        - Check for proper heading hierarchy
-        - Assess bullet point structure
-        - Review spacing and formatting
+        3. Content Structure:
+        • Evaluate formatting
+        • Assess organization
+        • Review headings
+        • Check consistency
 
-        4. Content Enhancement:
-        - Suggest stronger action verbs
-        - Recommend quantifiable metrics
-        - Identify weak or vague statements
-        - Propose specific improvements
+        4. Improvement Areas:
+        • List specific changes
+        • Suggest enhancements
+        • Note weak sections
+        • Recommend additions
 
-        5. Technical Match Score:
-        - Compare skills against industry standards
-        - Identify technology stack alignment
-        - Suggest trending technologies to add
-        - Rate modern vs legacy technology balance
+        5. Technical Alignment:
+        • Evaluate skill matches
+        • Compare technologies
+        • Suggest updates
+        • Rate relevance
 
-        Provide actionable recommendations for each category to achieve a score of 90+.
+        Format your response with clear bullet points and complete sentences.
+        Avoid line breaks within sentences.
+        Use proper punctuation and capitalization.
         """
         
         response = model.generate_content(prompt)

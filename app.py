@@ -139,29 +139,32 @@ def render_resume_upload_section():
             return
 
     st.markdown("""
-    <div class="section-title">
+    <div class="section-title text-center">
         <h2>Resume Analysis</h2>
         <p>Upload your existing resume for comprehensive AI-powered analysis</p>
     </div>
     """, unsafe_allow_html=True)
     
-    col1, col2 = st.columns([2, 1])
+    uploaded_file = st.file_uploader(
+        "Upload your resume (PDF or DOCX)",
+        type=['pdf', 'docx'],
+        help="We support PDF and DOCX formats"
+    )
     
-    with col1:
-        uploaded_file = st.file_uploader(
-            "Upload your resume (PDF or DOCX)",
-            type=['pdf', 'docx'],
-            help="We support PDF and DOCX formats"
-        )
-        
-        job_description = st.text_area(
-            "Paste the job description (optional)",
-            height=150,
-            help="Adding a job description will help us provide more targeted analysis"
-        )
-        
-        if uploaded_file and st.button("Analyze Resume"):
-            with st.spinner("Analyzing your resume..."):
+    job_description = st.text_area(
+        "Paste the job description (optional)",
+        height=150,
+        help="Adding a job description will help us provide more targeted analysis"
+    )
+    
+    # Center the analyze button
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        analyze_button = st.button("Analyze Resume", use_container_width=True)
+    
+    if uploaded_file and analyze_button:
+        with st.spinner("Analyzing your resume..."):
+            try:
                 # Parse resume
                 parsed_data = st.session_state.resume_parser.get_parsed_data(uploaded_file)
                 
@@ -178,138 +181,91 @@ def render_resume_upload_section():
                     # Convert parsed data to format expected by Gemini analysis
                     resume_data = {
                         'profile_summary': {
-                            'target_role': job_description[:100] if job_description else 'Not specified',
+                            'target_role': job_description[:100] if job_description else parsed_data['sections'].get('role', parsed_data['sections'].get('objective', '').split('\n')[0] if parsed_data['sections'].get('objective') else 'Not specified'),
                             'summary': parsed_data['sections'].get('summary', parsed_data['sections'].get('objective', ''))
                         },
                         'skills': {
-                            'programming': parsed_data['skills'],
-                            'frameworks': [],
-                            'other': []
+                            'programming': [skill.strip() for skill in parsed_data['skills'] if skill.strip()],
+                            'frameworks': [skill.strip() for skill in parsed_data.get('frameworks', []) if skill.strip()],
+                            'other': [skill.strip() for skill in parsed_data.get('other_skills', []) if skill.strip()]
                         },
                         'education': {
-                            'university': parsed_data['sections'].get('education', 'Not specified'),
-                            'degree': parsed_data['sections'].get('degree', 'Not specified')
+                            'university': parsed_data['sections'].get('education', '').split('\n')[0] if parsed_data['sections'].get('education') else 'Not specified',
+                            'degree': parsed_data['sections'].get('degree', parsed_data['sections'].get('education', 'Not specified'))
                         },
-                        'projects': []  # Initialize empty as we may not have structured project data
+                        'projects': [
+                            {
+                                'title': project.get('title', ''),
+                                'description': project.get('description', ''),
+                                'responsibilities': project.get('responsibilities', '').split('\n'),
+                                'tools': project.get('tools', ''),
+                                'duration': project.get('duration', '')
+                            }
+                            for project in parsed_data.get('projects', [])
+                        ] if parsed_data.get('projects') else []
                     }
+
+                    # Add any additional sections found in parsed data
+                    for section_name, content in parsed_data['sections'].items():
+                        if section_name.lower() not in ['summary', 'objective', 'education', 'skills', 'projects']:
+                            resume_data[section_name.lower()] = content
                     
                     # Get AI analysis using the same functions as generated resumes
-                    try:
-                        if not st.session_state.gemini_model:
-                            st.error("AI model not initialized. Please check your API configuration.")
-                            return
+                    if not st.session_state.gemini_model:
+                        st.error("AI model not initialized. Please check your API configuration.")
+                        return
 
-                        with st.spinner("Getting AI insights..."):
-                            analysis = analyze_resume_content(st.session_state.gemini_model, resume_data)
-                            ats_analysis = get_ats_optimization(st.session_state.gemini_model, resume_data)
-                            
-                            # Store analysis in session state
-                            st.session_state.ai_analysis = {
-                                'profile_analysis': analysis['profile_analysis'],
-                                'skills_analysis': analysis['skills_analysis'],
-                                'ats_analysis': ats_analysis['ats_analysis']
-                            }
-                            
-                            # Display the analysis immediately
-                            st.markdown("## Resume Analysis Results")
-                            
-                            # Display ATS Score
-                            st.markdown("""
-                            <div class="score-card" style="margin-bottom: 2rem;">
-                                <h3>ATS Compatibility Score</h3>
-                                <div class="score-value">{}/100</div>
-                            </div>
-                            """.format(parsed_data['scores']['total_score']), unsafe_allow_html=True)
-                            
-                            # Create tabs for different analyses
-                            analysis_tab1, analysis_tab2, analysis_tab3, analysis_tab4 = st.tabs([
-                                "Profile Analysis", 
-                                "Skills Assessment", 
-                                "ATS Optimization",
-                                "Detailed Scores"
-                            ])
-                            
-                            with analysis_tab1:
-                                st.markdown("### Profile Analysis")
+                    with st.expander("AI Resume Analysis", expanded=True):
+                        try:
+                            with st.spinner("Analyzing your resume with AI..."):
+                                # Get AI analysis
+                                analysis = analyze_resume_content(st.session_state.gemini_model, resume_data)
+                                ats_analysis = get_ats_optimization(st.session_state.gemini_model, resume_data)
+                                
+                                # Store analysis in session state for later use
+                                st.session_state.ai_analysis = {
+                                    'profile_analysis': analysis['profile_analysis'],
+                                    'skills_analysis': analysis['skills_analysis'],
+                                    'ats_analysis': ats_analysis['ats_analysis']
+                                }
+                                
+                                # Display Profile Summary Analysis
+                                st.subheader("Profile Summary Analysis")
                                 st.markdown(analysis['profile_analysis'])
-                            
-                            with analysis_tab2:
-                                st.markdown("### Skills Assessment")
+                                
+                                # Display Skills Analysis
+                                st.subheader("Skills Analysis")
                                 st.markdown(analysis['skills_analysis'])
                                 
-                                st.markdown("### Detected Skills")
-                                st.write(", ".join(parsed_data['skills']))
-                            
-                            with analysis_tab3:
-                                st.markdown("### ATS Optimization Recommendations")
+                                # Display ATS Optimization
+                                st.subheader("ATS Optimization")
                                 st.markdown(ats_analysis['ats_analysis'])
                                 
-                                st.markdown("### Key Improvement Areas")
-                                for feedback in parsed_data['scores']['feedback']:
-                                    st.warning(feedback)
-                            
-                            with analysis_tab4:
-                                st.markdown("### Detailed Score Breakdown")
+                                # Add download button for current analysis
+                                current_suggestions = (
+                                    f"AI Resume Analysis Report\n"
+                                    f"Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
+                                    f"For: {resume_data['profile_summary']['target_role']}\n\n"
+                                    f"=== Profile Summary Analysis ===\n"
+                                    f"{analysis['profile_analysis']}\n\n"
+                                    f"=== Skills Analysis ===\n"
+                                    f"{analysis['skills_analysis']}\n\n"
+                                    f"=== ATS Optimization ===\n"
+                                    f"{ats_analysis['ats_analysis']}\n"
+                                )
                                 
-                                scores = parsed_data['scores']
-                                col1, col2 = st.columns(2)
-                                
-                                with col1:
-                                    st.metric("Format Score", f"{scores['format_score']}/20")
-                                    st.metric("Content Score", f"{scores['content_score']}/30")
-                                
-                                with col2:
-                                    st.metric("Skills Score", f"{scores['skills_score']}/25")
-                                    st.metric("Keyword Score", f"{scores['keyword_score']}/25")
-                                
-                                st.markdown("### Score Progress")
-                                st.progress(scores['format_score']/20, "Format")
-                                st.progress(scores['content_score']/30, "Content")
-                                st.progress(scores['skills_score']/25, "Skills")
-                                st.progress(scores['keyword_score']/25, "Keywords")
-                            
-                            # Add download button for the complete analysis
-                            analysis_content = f"""Resume Analysis Report
-Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-
-=== ATS COMPATIBILITY SCORE: {parsed_data['scores']['total_score']}/100 ===
-
-=== PROFILE ANALYSIS ===
-{analysis['profile_analysis']}
-
-=== SKILLS ASSESSMENT ===
-{analysis['skills_analysis']}
-
-Detected Skills:
-{', '.join(parsed_data['skills'])}
-
-=== ATS OPTIMIZATION ===
-{ats_analysis['ats_analysis']}
-
-=== IMPROVEMENT SUGGESTIONS ===
-{chr(10).join('- ' + feedback for feedback in parsed_data['scores']['feedback'])}
-
-=== DETAILED SCORES ===
-Format Score: {scores['format_score']}/20
-Content Score: {scores['content_score']}/30
-Skills Score: {scores['skills_score']}/25
-Keyword Score: {scores['keyword_score']}/25
-"""
-                            
-                            st.download_button(
-                                label="Download Complete Analysis Report",
-                                data=analysis_content,
-                                file_name=f"Resume_Analysis_Report_{datetime.now().strftime('%Y%m%d')}.txt",
-                                mime="text/plain"
-                            )
-                            
-                    except Exception as e:
-                        st.error(f"Error during AI analysis: {str(e)}")
-                        st.info("Basic ATS analysis will still be provided.")
-                        st.write("Debug info:", resume_data)
-    
-    # Remove the col2 section since we're now showing analysis in tabs
-    # This gives more space for the detailed analysis
+                                st.download_button(
+                                    label="Download Analysis Report",
+                                    data=current_suggestions,
+                                    file_name=f"AI_Resume_Analysis_{datetime.now().strftime('%Y%m%d')}.txt",
+                                    mime="text/plain"
+                                )
+                        except Exception as e:
+                            st.error(f"An error occurred during AI analysis: {str(e)}")
+                            st.info("Please check your API key or try again later.")
+            except Exception as e:
+                st.error(f"Error during analysis: {str(e)}")
+                st.info("Please try again or contact support if the issue persists.")
 
 def main():
     """Main application function"""
@@ -605,59 +561,7 @@ def main():
                             st.subheader("ATS Optimization")
                             st.markdown(ats_analysis['ats_analysis'])
                             
-                            # Add Apply Changes button
-                            apply_clicked = st.button("Apply AI Suggestions")
-                            if apply_clicked and not st.session_state.get('applying_suggestions', False):
-                                st.session_state.applying_suggestions = True
-                                with st.spinner("Applying AI suggestions..."):
-                                    try:
-                                        # Apply the suggestions
-                                        updated_data, changes = apply_ai_suggestions(
-                                            st.session_state.resume_data,
-                                            st.session_state.ai_analysis
-                                        )
-                                        
-                                        # Update the resume data with changes
-                                        st.session_state.resume_data = updated_data
-                                        
-                                        # Show what changes were made
-                                        st.success("AI suggestions applied successfully!")
-                                        for change in changes:
-                                            st.write(change)
-                                        
-                                        # Create suggestions text content
-                                        changes_list = "\n".join(f"- {change}" for change in changes)
-                                        suggestions_content = (
-                                            f"AI Resume Analysis Report\n"
-                                            f"Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
-                                            f"For: {st.session_state.resume_data['personal_info']['name']}\n\n"
-                                            f"=== Profile Summary Analysis ===\n"
-                                            f"{st.session_state.ai_analysis['profile_analysis']}\n\n"
-                                            f"=== Skills Analysis ===\n"
-                                            f"{st.session_state.ai_analysis['skills_analysis']}\n\n"
-                                            f"=== ATS Optimization ===\n"
-                                            f"{st.session_state.ai_analysis['ats_analysis']}\n\n"
-                                            f"=== Changes Applied ===\n"
-                                            f"{changes_list}\n"
-                                        )
-                                        
-                                        # Add download button for suggestions
-                                        st.download_button(
-                                            label="Download AI Suggestions",
-                                            data=suggestions_content,
-                                            file_name=f"AI_Resume_Suggestions_{datetime.now().strftime('%Y%m%d')}.txt",
-                                            mime="text/plain"
-                                        )
-                                        
-                                        # Generate new PDF with updates
-                                        html_resume = generate_resume(st.session_state.resume_data)
-                                        pdf_path = create_pdf(html_resume, st.session_state.resume_data["personal_info"]["name"])
-                                        st.session_state.pdf_path = pdf_path
-                                        st.rerun()
-                                    finally:
-                                        st.session_state.applying_suggestions = False
-                            
-                            # Add download button for current suggestions (even before applying)
+                            # Add download button for current analysis
                             current_suggestions = (
                                 f"AI Resume Analysis Report\n"
                                 f"Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
@@ -671,12 +575,11 @@ def main():
                             )
                             
                             st.download_button(
-                                label="Download Current Analysis",
+                                label="Download Analysis Report",
                                 data=current_suggestions,
                                 file_name=f"AI_Resume_Analysis_{datetime.now().strftime('%Y%m%d')}.txt",
                                 mime="text/plain"
                             )
-                    
                     except Exception as e:
                         st.error(f"An error occurred during AI analysis: {str(e)}")
                         st.info("Please check your API key or try again later.")

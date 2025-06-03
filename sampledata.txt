@@ -8,9 +8,11 @@ Bachelor of Technology in Artificail Intelligence in Data Science
 
 Data analyst
 
-Highly analytical and results-oriented Data Analyst with a proven ability to leverage AI/ML principles and Python programming to build scalable data solutions. Experienced in extracting actionable insights from complex datasets to inform strategic business decisions. Proficient in data visualization and manipulation using Pandas, NumPy, and Matplotlib
+Highly analytical and results-oriented Data Analyst with a proven ability to leverage AI/ML principles and Python programming to build scalable data solutions. 
+Experienced in extracting actionable insights from complex datasets to inform strategic business decisions. 
+Proficient in data visualization and manipulation using Pandas, NumPy, and Matplotlib
 
-HTML, css Javascript, Python, Java, C, React, SQL, 
+HTML, css Javascript, Python, Java, C, React, SQL 
 Communication, Problem-Solving, Critical Thinking, Teamwork, Time Management, Presentation Skills, Business Acumen.
 Pandas, Numpy, Matplotlib
 DSA, Pipelining, Modeling, Data Wrangling/Cleaning, regression analysis, classification, clustering
@@ -21,11 +23,11 @@ Jan 2022 - May 2022
 Jan 2022 - May 2022
 i have made my Portfolio to interact with more people and for the more reach, i have made my Portfolio to interact with more people and for the more reach, i have made my Portfolio to interact with more people and for the more reach.
 
-    UI designer
-    UX designer
-    Tester
-    Deployer
-    Developer
+UI designer
+UX designer
+Tester
+Deployer
+Developer
 
 Cordinator of multi-clg event in our Collage
 Comlpeted the Google Data analyst course
