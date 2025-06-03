@@ -71,8 +71,8 @@ Check out our video demo: [Watch on YouTube](https://youtube.com/your-demo-link)
 
 1. **Clone the Repository**
    ```bash
-   git clone hhttps://github.com/rohanmushan/R.E.A.D.M.L.-Resume-Enhancing-Analysing-Development-using-Machine-Learning-.git
-   cd R.E.A.D.M.L.-Resume-Enhancing-Analysing-Development-using-Machine-Learning
+   git clone hhttps://github.com/rohanmushan/R.E.A.D.M.L..git
+   cd R.E.A.D.M.L.
    ```
 
 2. **Set Up Virtual Environment**
@@ -177,13 +177,6 @@ streamlit run app.py
 1. Navigate to "Resume Analysis" section
 2. Upload your PDF resume
 3. Get instant feedback:
-   ```json
-   {
-     "ats_score": 85,
-     "keyword_match": ["python", "machine learning", "leadership"],
-     "improvement_areas": ["Add more quantifiable achievements", "Include certifications"]
-   }
-   ```
 
 ### Generating Enhanced Resume
 ```bash
@@ -212,6 +205,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 📧 Contact & Support
 
 - Project Maintainer: [rohanmushan08@gmail.com](mailto:rohanmushan08@gmail.com)
-- Project Link: [git@github.com:rohanmushan/R.E.A.D.M.L.-Resume-Enhancing-Analysing-Development-using-Machine-Learning-.git](https://github.com/yourusername/R.E.A.D.M.L)
-- Report Issues: [Issue Tracker](https://github.com/yourusername/R.E.A.D.M.L/issues)
-- Documentation: [Wiki](https://github.com/yourusername/R.E.A.D.M.L/wiki)
+- Project Link: [git@github.com:rohanmushan/R.E.A.D.M.L.-Resume-Enhancing-Analysing-Development-using-Machine-Learning-.git](https://github.com/rohanmushan/R.E.A.D.M.L.)
+- Report Issues: [Issue Tracker](https://github.com/rohanmushan/R.E.A.D.M.L./issues)
+- Documentation: [Wiki](https://github.com/rohanmushan/R.E.A.D.M.L./wiki)
