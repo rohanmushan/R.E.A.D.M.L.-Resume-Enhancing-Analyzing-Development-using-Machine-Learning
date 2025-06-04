@@ -40,24 +40,50 @@ class ResumeParser:
         self.SKILLS_DB = {
             'programming_languages': {
                 'python', 'java', 'javascript', 'typescript', 'c++', 'c#', 'ruby', 'php',
-                'swift', 'kotlin', 'go', 'rust', 'scala', 'perl', 'r', 'matlab'
+                'swift', 'kotlin', 'go', 'rust', 'scala', 'perl', 'r', 'matlab', 'dart',
+                'solidity', 'haskell', 'julia', 'lua', 'objective-c', 'assembly', 'cobol'
             },
-            'frameworks': {
+            'frameworks_libraries': {
                 'react', 'angular', 'vue.js', 'django', 'flask', 'spring', 'express',
-                'node.js', 'next.js', 'nuxt.js', 'flutter', 'tensorflow', 'pytorch'
+                'node.js', 'next.js', 'nuxt.js', 'flutter', 'tensorflow', 'pytorch',
+                'fastapi', 'laravel', 'svelte', 'nest.js', 'remix', 'gatsby', 'qwik',
+                'scikit-learn', 'pandas', 'numpy', 'keras', 'transformers', 'jest',
+                'cypress', 'playwright', 'selenium', 'puppeteer'
             },
             'databases': {
                 'mysql', 'postgresql', 'mongodb', 'redis', 'elasticsearch', 'cassandra',
-                'oracle', 'sql server', 'dynamodb', 'firebase'
+                'oracle', 'sql server', 'dynamodb', 'firebase', 'neo4j', 'cockroachdb',
+                'supabase', 'planetscale', 'sqlite', 'mariadb', 'couchdb', 'graphql'
             },
             'cloud_devops': {
                 'aws', 'azure', 'gcp', 'docker', 'kubernetes', 'jenkins', 'terraform',
-                'ansible', 'circleci', 'github actions', 'gitlab ci'
+                'ansible', 'circleci', 'github actions', 'gitlab ci', 'prometheus',
+                'grafana', 'datadog', 'new relic', 'cloudflare', 'vercel', 'netlify',
+                'heroku', 'digitalocean', 'vagrant', 'pulumi', 'helm'
             },
             'ai_ml': {
                 'machine learning', 'deep learning', 'nlp', 'computer vision',
                 'data science', 'neural networks', 'reinforcement learning',
-                'statistical analysis', 'big data', 'data mining'
+                'statistical analysis', 'big data', 'data mining', 'gpt', 'llm',
+                'chatbots', 'recommendation systems', 'anomaly detection', 'clustering',
+                'classification', 'regression', 'time series analysis'
+            },
+            'web_mobile': {
+                'html5', 'css3', 'sass', 'less', 'responsive design', 'pwa',
+                'web components', 'webrtc', 'websockets', 'service workers',
+                'web assembly', 'web3', 'blockchain', 'ios', 'android', 'react native',
+                'xamarin', 'ionic', 'cordova', 'capacitor'
+            },
+            'tools_methodologies': {
+                'git', 'jira', 'confluence', 'agile', 'scrum', 'kanban', 'tdd',
+                'bdd', 'ci/cd', 'microservices', 'rest api', 'soap', 'graphql',
+                'oauth', 'jwt', 'swagger', 'postman', 'figma', 'sketch', 'adobe xd'
+            },
+            'soft_skills': {
+                'leadership', 'communication', 'problem solving', 'teamwork',
+                'project management', 'time management', 'critical thinking',
+                'adaptability', 'creativity', 'presentation', 'mentoring',
+                'stakeholder management', 'conflict resolution'
             }
         }
         
@@ -247,54 +273,77 @@ class ResumeParser:
             'skills_score': 0,
             'keyword_score': 0,
             'relevance_score': 0,
+            'readability_score': 0,
             'total_score': 0,
             'feedback': [],
-            'detected_skills': skills_by_category
+            'detected_skills': skills_by_category,
+            'improvement_priority': []
         }
         
-        # Format Score (20 points)
-        format_points = 20
+        # Format Score (15 points)
+        format_points = 15
+        
+        # Check section organization
         if len(sections) < 4:
             format_points -= 5
             scores['feedback'].append("Missing key sections - add more sections to your resume")
-        if len(list(doc.sents)) < 10:
-            format_points -= 5
-            scores['feedback'].append("Content is too brief - add more detailed descriptions")
+            scores['improvement_priority'].append(("Add Missing Sections", "High"))
         
-        # Check for section headers formatting
+        # Check content length and distribution
+        section_lengths = {section: len(content.split()) for section, content in sections.items()}
+        if sum(section_lengths.values()) < 300:
+            format_points -= 3
+            scores['feedback'].append("Resume content is too brief - aim for 300-700 words")
+            scores['improvement_priority'].append(("Expand Content", "High"))
+        elif sum(section_lengths.values()) > 1000:
+            format_points -= 2
+            scores['feedback'].append("Resume might be too verbose - consider condensing")
+            scores['improvement_priority'].append(("Condense Content", "Medium"))
+        
+        # Check section headers formatting
         section_headers = sum(1 for line in text.split('\n') 
                             if line.strip().lower() in self.SECTIONS)
         if section_headers < 4:
-            format_points -= 5
+            format_points -= 3
             scores['feedback'].append("Use clear section headers to organize your resume")
+            scores['improvement_priority'].append(("Improve Section Headers", "High"))
         
         scores['format_score'] = max(0, format_points)
         
-        # Content Score (30 points)
-        content_points = 30
-        words = len(text.split())
-        if words < 300:
-            content_points -= 10
-            scores['feedback'].append("Resume is too short - aim for 300-700 words")
-        elif words > 1000:
-            content_points -= 5
-            scores['feedback'].append("Resume might be too long - consider condensing")
+        # Content Score (25 points)
+        content_points = 25
         
         # Check for action verbs and metrics
         action_verbs = ['developed', 'implemented', 'created', 'managed', 'led',
-                       'designed', 'improved', 'increased', 'reduced', 'achieved']
+                       'designed', 'improved', 'increased', 'reduced', 'achieved',
+                       'launched', 'optimized', 'coordinated', 'streamlined', 
+                       'automated', 'architected', 'mentored', 'spearheaded']
         verb_count = sum(1 for token in doc if token.text.lower() in action_verbs)
         
-        metrics_patterns = [r'\d+%', r'\$\d+', r'\d+ years', r'\d+\+']
+        metrics_patterns = [
+            r'\d+%', r'\$\d+', r'\d+ years?', r'\d+\+',
+            r'\d+x', r'\d+M', r'\d+K', r'\d+ users?',
+            r'\d+ team members?', r'\d+ projects?'
+        ]
         metrics_count = sum(1 for pattern in metrics_patterns 
                           if re.search(pattern, text, re.IGNORECASE))
         
         if verb_count < 5:
-            content_points -= 10
+            content_points -= 8
             scores['feedback'].append("Use more action verbs to describe your experiences")
+            scores['improvement_priority'].append(("Add Action Verbs", "High"))
         if metrics_count < 3:
-            content_points -= 5
+            content_points -= 7
             scores['feedback'].append("Add more quantifiable achievements and metrics")
+            scores['improvement_priority'].append(("Add Metrics", "High"))
+        
+        # Check for bullet point formatting
+        bullet_points = sum(1 for line in text.split('\n') 
+                          if line.strip().startswith(('•', '-', '∙', '*')))
+        if bullet_points < 10:
+            content_points -= 5
+            scores['feedback'].append("Use more bullet points to organize achievements")
+            scores['improvement_priority'].append(("Add Bullet Points", "Medium"))
         
         scores['content_score'] = max(0, content_points)
         
@@ -302,17 +351,31 @@ class ResumeParser:
         skills_points = 25
         total_skills = sum(len(skills) for skills in skills_by_category.values())
         
-        if total_skills < 5:
-            skills_points -= 15
-            scores['feedback'].append("Add more technical skills relevant to your field")
-        elif total_skills < 10:
-            skills_points -= 10
-            scores['feedback'].append("Consider adding more diverse technical skills")
+        # Calculate skill distribution score
+        skill_distribution = {
+            category: len(skills) for category, skills in skills_by_category.items()
+        }
         
-        # Check for skills distribution
-        if not any(skills_by_category[cat] for cat in ['programming_languages', 'frameworks']):
+        if total_skills < 8:
+            skills_points -= 15
+            scores['feedback'].append("Add more technical and professional skills")
+            scores['improvement_priority'].append(("Expand Skills Section", "High"))
+        elif total_skills < 15:
+            skills_points -= 8
+            scores['feedback'].append("Consider adding more diverse skills")
+            scores['improvement_priority'].append(("Diversify Skills", "Medium"))
+        
+        # Check for core technical skills
+        if not any(skills_by_category[cat] for cat in ['programming_languages', 'frameworks_libraries']):
             skills_points -= 5
             scores['feedback'].append("Add core technical skills (programming languages/frameworks)")
+            scores['improvement_priority'].append(("Add Technical Skills", "High"))
+        
+        # Check for balanced skill distribution
+        if len([cat for cat, count in skill_distribution.items() if count > 0]) < 3:
+            skills_points -= 5
+            scores['feedback'].append("Add skills from more categories for better balance")
+            scores['improvement_priority'].append(("Balance Skills", "Medium"))
         
         scores['skills_score'] = max(0, skills_points)
         
@@ -329,37 +392,64 @@ class ResumeParser:
                 # Extract key terms from job description
                 job_doc = self.nlp(job_description.lower())
                 key_terms = [token.text for token in job_doc 
-                           if not token.is_stop and not token.is_punct]
+                           if not token.is_stop and not token.is_punct
+                           and len(token.text) > 2]
                 
-                # Check for missing important terms
+                # Find missing important terms
                 missing_terms = [term for term in set(key_terms) 
                                if term not in text.lower() 
                                and len(term) > 3]
                 
                 if missing_terms:
                     scores['feedback'].append(f"Consider adding these keywords: {', '.join(missing_terms[:5])}")
+                    scores['improvement_priority'].append(("Add Job Keywords", "High"))
                 
                 if similarity < 0.3:
                     scores['feedback'].append("Resume doesn't match job description well - tailor it more")
+                    scores['improvement_priority'].append(("Improve Job Match", "High"))
             except Exception as e:
-                st.warning(f"Error in keyword analysis: {str(e)}")
-                keyword_points = 15  # Default if analysis fails
+                keyword_points = 15
         
         scores['keyword_score'] = max(0, keyword_points)
+        
+        # Readability Score (10 points)
+        readability_points = 10
+        
+        # Check sentence length and complexity
+        sentences = list(doc.sents)
+        avg_sentence_length = sum(len(sent) for sent in sentences) / len(sentences) if sentences else 0
+        
+        if avg_sentence_length > 25:
+            readability_points -= 3
+            scores['feedback'].append("Simplify sentences for better readability")
+            scores['improvement_priority'].append(("Simplify Sentences", "Medium"))
+        
+        # Check for passive voice
+        passive_constructs = sum(1 for sent in sentences 
+                               if any(token.dep_ == 'auxpass' for token in sent))
+        if passive_constructs > len(sentences) * 0.3:
+            readability_points -= 3
+            scores['feedback'].append("Use more active voice in descriptions")
+            scores['improvement_priority'].append(("Use Active Voice", "Medium"))
+        
+        scores['readability_score'] = max(0, readability_points)
         
         # Calculate total score
         scores['total_score'] = (
             scores['format_score'] +
             scores['content_score'] +
             scores['skills_score'] +
-            scores['keyword_score']
+            scores['keyword_score'] +
+            scores['readability_score']
         )
         
-        # Add improvement suggestions based on total score
+        # Add final recommendations based on total score
         if scores['total_score'] < 70:
             scores['feedback'].append("Consider professional resume review for major improvements")
-        if scores['total_score'] < 50:
-            scores['feedback'].append("Significant improvements needed in content and formatting")
+            scores['improvement_priority'].append(("Professional Review", "High"))
+        elif scores['total_score'] < 85:
+            scores['feedback'].append("Good foundation, focus on high-priority improvements")
+            scores['improvement_priority'].append(("Targeted Improvements", "Medium"))
         
         return scores
 

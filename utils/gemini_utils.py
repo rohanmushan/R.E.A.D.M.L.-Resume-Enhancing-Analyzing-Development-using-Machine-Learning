@@ -58,41 +58,46 @@ def analyze_resume_content(model, resume_data: Dict) -> Dict:
         CURRENT SUMMARY: {resume_data['profile_summary']['summary']}
         SKILLS: {', '.join(resume_data['skills']['programming'] + resume_data['skills'].get('frameworks', []))}
         
-        Provide detailed, actionable feedback in the following categories. Use complete sentences and proper punctuation:
+        Provide detailed, actionable feedback in the following categories:
 
-        1. Profile Strengths:
-        • List the strong points of the current profile
-        • Highlight effective elements
-        • Note any standout achievements
-        • Identify well-presented skills
+        1. Profile Strengths (25%):
+        • Identify strong points that align with the target role
+        • Highlight effective achievements and metrics
+        • Note well-presented technical capabilities
+        • Recognize unique selling points
+        • Evaluate industry-specific expertise
 
-        2. Areas for Improvement:
-        • Point out specific gaps in the profile
-        • Identify missing key elements
+        2. Areas for Improvement (25%):
+        • Point out specific content gaps
+        • Identify missing key qualifications
         • Suggest concrete additions
-        • Note any unclear or weak points
+        • Note unclear or weak descriptions
+        • Recommend better ways to present experience
 
-        3. Industry Alignment:
-        • Compare with {resume_data['profile_summary']['target_role']} standards
-        • List missing industry keywords
+        3. Industry Alignment (20%):
+        • Compare with current industry standards
+        • List missing critical keywords
         • Suggest relevant certifications
-        • Recommend specific technical skills
+        • Recommend emerging technical skills
+        • Note competitive differentiators
 
-        4. Content Enhancement:
+        4. Content Enhancement (15%):
         • Provide specific metrics to add
-        • Suggest stronger action verbs
+        • Suggest impactful action verbs
         • Recommend achievement formats
         • List quantifiable examples
+        • Propose better ways to describe projects
 
-        5. Optimization Tips:
+        5. Optimization Tips (15%):
         • Suggest structural improvements
         • Recommend format changes
         • Propose keyword placements
         • Advise on content organization
+        • Note best practices for the role
 
         Format your response with clear bullet points and complete sentences.
-        Avoid line breaks within sentences.
-        Use proper punctuation and capitalization.
+        Focus on actionable, specific advice that will improve the resume's effectiveness.
+        Prioritize recommendations based on their potential impact.
         """
         
         profile_response = model.generate_content(profile_prompt)
@@ -110,41 +115,46 @@ def analyze_resume_content(model, resume_data: Dict) -> Dict:
         FRAMEWORKS: {', '.join(resume_data['skills'].get('frameworks', []))}
         OTHER SKILLS: {', '.join(resume_data['skills'].get('other', []))}
         
-        Provide a detailed analysis in these areas. Use complete sentences and proper punctuation:
+        Provide a detailed analysis in these areas:
 
-        1. Core Technical Skills:
-        • Evaluate current technical skills
-        • Identify missing essential skills
+        1. Technical Skill Assessment (30%):
+        • Evaluate current technical stack
+        • Rate skill relevance for the role
+        • Identify critical missing skills
         • Suggest priority additions
-        • Rate skill relevance
+        • Compare with industry standards
 
-        2. Framework & Tool Analysis:
-        • Assess framework knowledge
-        • Recommend additional tools
-        • Suggest version upgrades
-        • Note obsolete technologies
+        2. Framework & Tool Analysis (25%):
+        • Assess framework proficiency needs
+        • Recommend complementary tools
+        • Suggest version-specific skills
+        • Note emerging technologies
+        • Identify obsolete technologies
 
-        3. Industry Requirements:
-        • List must-have skills for the role
+        3. Industry Requirements (20%):
+        • List must-have skills for 2024
         • Identify emerging technologies
         • Suggest certification paths
         • Note competitive advantages
+        • Compare with market demands
 
-        4. Skill Development Plan:
+        4. Skill Development Plan (15%):
         • Prioritize learning objectives
         • Recommend learning resources
         • Suggest timeline for upskilling
         • List quick wins
+        • Propose long-term goals
 
-        5. Market Positioning:
-        • Compare against market demands
-        • Identify unique combinations
+        5. Market Positioning (10%):
+        • Analyze unique skill combinations
         • Suggest specialization paths
-        • Note high-demand areas
+        • Identify high-demand niches
+        • Note salary-boosting skills
+        • Recommend portfolio projects
 
         Format your response with clear bullet points and complete sentences.
-        Avoid line breaks within sentences.
-        Use proper punctuation and capitalization.
+        Focus on concrete, actionable recommendations.
+        Consider both immediate needs and future career growth.
         """
         
         skills_response = model.generate_content(skills_prompt)
@@ -188,43 +198,53 @@ def get_ats_optimization(model, resume_data: Dict) -> Dict:
         - Projects: {json.dumps([p['title'] for p in resume_data['projects']])}
         - Education: {resume_data['education']['degree']} from {resume_data['education']['university']}
 
-        Provide a comprehensive ATS analysis with the following structure. Use complete sentences and proper punctuation:
+        Provide a comprehensive ATS analysis with the following structure:
 
-        1. ATS Score Analysis:
+        1. ATS Compatibility Score (30%):
         • Overall Score: [0-100]
         • Keyword Relevance: [0-30]
-        • Role Alignment: [0-20]
+        • Format Compliance: [0-25]
         • Skills Match: [0-25]
-        • Format Quality: [0-15]
-        • Education Match: [0-10]
+        • Education Match: [0-20]
+        • Detailed score breakdown
+        • Industry benchmark comparison
 
-        2. Keyword Optimization:
-        • List found keywords
-        • Note missing keywords
-        • Suggest additions
-        • Recommend placements
+        2. Keyword Optimization (25%):
+        • Critical keywords found
+        • Missing essential keywords
+        • Keyword placement analysis
+        • Frequency optimization
+        • Context relevance
+        • Industry-specific terms
 
-        3. Content Structure:
-        • Evaluate formatting
-        • Assess organization
-        • Review headings
-        • Check consistency
+        3. Format & Structure (20%):
+        • Section organization
+        • Content hierarchy
+        • Heading consistency
+        • Bullet point usage
+        • White space utilization
+        • File format compliance
 
-        4. Improvement Areas:
-        • List specific changes
-        • Suggest enhancements
-        • Note weak sections
-        • Recommend additions
+        4. Content Enhancement (15%):
+        • Action verb usage
+        • Metrics and achievements
+        • Technical terminology
+        • Role-specific language
+        • Experience description
+        • Project highlights
 
-        5. Technical Alignment:
-        • Evaluate skill matches
-        • Compare technologies
-        • Suggest updates
-        • Rate relevance
+        5. ATS-Specific Recommendations (10%):
+        • File format guidelines
+        • Parsing optimization
+        • Layout improvements
+        • Font considerations
+        • Special character usage
+        • Mobile compatibility
 
-        Format your response with clear bullet points and complete sentences.
-        Avoid line breaks within sentences.
-        Use proper punctuation and capitalization.
+        Format your response with clear sections and bullet points.
+        Provide specific, actionable recommendations.
+        Include both quick fixes and strategic improvements.
+        Consider multiple ATS platforms' requirements.
         """
         
         response = model.generate_content(prompt)

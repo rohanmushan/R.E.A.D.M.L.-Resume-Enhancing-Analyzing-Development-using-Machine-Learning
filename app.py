@@ -5,6 +5,10 @@ from utils.gemini_utils import initialize_gemini, analyze_resume_content, get_at
 from utils.resume_parser import ResumeParser
 import os
 from datetime import datetime
+import pandas as pd
+import plotly.express as px
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 
 # Set page config
 st.set_page_config(
@@ -163,106 +167,685 @@ def render_resume_upload_section():
         analyze_button = st.button("Analyze Resume", use_container_width=True)
     
     if uploaded_file and analyze_button:
-        with st.spinner("Analyzing your resume..."):
+        with st.expander("AI Resume Analysis", expanded=True):
             try:
-                # Parse resume
-                parsed_data = st.session_state.resume_parser.get_parsed_data(uploaded_file)
-                
-                if parsed_data:
-                    # Calculate ATS score with job description if provided
-                    if job_description:
-                        parsed_data['scores'] = st.session_state.resume_parser.calculate_ats_score(
-                            parsed_data['full_text'],
-                            job_description
-                        )
+                with st.spinner("Analyzing your resume..."):
+                    # Parse resume
+                    parsed_data = st.session_state.resume_parser.get_parsed_data(uploaded_file)
                     
-                    st.session_state.parsed_resume = parsed_data
-                    
-                    # Convert parsed data to format expected by Gemini analysis
-                    resume_data = {
-                        'profile_summary': {
-                            'target_role': job_description[:100] if job_description else parsed_data['sections'].get('role', parsed_data['sections'].get('objective', '').split('\n')[0] if parsed_data['sections'].get('objective') else 'Not specified'),
-                            'summary': parsed_data['sections'].get('summary', parsed_data['sections'].get('objective', ''))
-                        },
-                        'skills': {
-                            'programming': [skill.strip() for skill in parsed_data['skills'] if skill.strip()],
-                            'frameworks': [skill.strip() for skill in parsed_data.get('frameworks', []) if skill.strip()],
-                            'other': [skill.strip() for skill in parsed_data.get('other_skills', []) if skill.strip()]
-                        },
-                        'education': {
-                            'university': parsed_data['sections'].get('education', '').split('\n')[0] if parsed_data['sections'].get('education') else 'Not specified',
-                            'degree': parsed_data['sections'].get('degree', parsed_data['sections'].get('education', 'Not specified'))
-                        },
-                        'projects': [
-                            {
-                                'title': project.get('title', ''),
-                                'description': project.get('description', ''),
-                                'responsibilities': project.get('responsibilities', '').split('\n'),
-                                'tools': project.get('tools', ''),
-                                'duration': project.get('duration', '')
-                            }
-                            for project in parsed_data.get('projects', [])
-                        ] if parsed_data.get('projects') else []
-                    }
+                    if parsed_data:
+                        # Calculate ATS score with job description if provided
+                        if job_description:
+                            parsed_data['scores'] = st.session_state.resume_parser.calculate_ats_score(
+                                parsed_data['full_text'],
+                                job_description
+                            )
+                        
+                        st.session_state.parsed_resume = parsed_data
+                        
+                        # Convert parsed data to format expected by Gemini analysis
+                        resume_data = {
+                            'profile_summary': {
+                                'target_role': job_description[:100] if job_description else parsed_data['sections'].get('role', parsed_data['sections'].get('objective', '').split('\n')[0] if parsed_data['sections'].get('objective') else 'Not specified'),
+                                'summary': parsed_data['sections'].get('summary', parsed_data['sections'].get('objective', ''))
+                            },
+                            'skills': {
+                                'programming': [skill.strip() for skill in parsed_data['skills'] if skill.strip()],
+                                'frameworks': [skill.strip() for skill in parsed_data.get('frameworks', []) if skill.strip()],
+                                'other': [skill.strip() for skill in parsed_data.get('other_skills', []) if skill.strip()]
+                            },
+                            'education': {
+                                'university': parsed_data['sections'].get('education', '').split('\n')[0] if parsed_data['sections'].get('education') else 'Not specified',
+                                'degree': parsed_data['sections'].get('degree', parsed_data['sections'].get('education', 'Not specified'))
+                            },
+                            'projects': [
+                                {
+                                    'title': project.get('title', ''),
+                                    'description': project.get('description', ''),
+                                    'responsibilities': project.get('responsibilities', '').split('\n'),
+                                    'tools': project.get('tools', ''),
+                                    'duration': project.get('duration', '')
+                                }
+                                for project in parsed_data.get('projects', [])
+                            ] if parsed_data.get('projects') else []
+                        }
 
-                    # Add any additional sections found in parsed data
-                    for section_name, content in parsed_data['sections'].items():
-                        if section_name.lower() not in ['summary', 'objective', 'education', 'skills', 'projects']:
-                            resume_data[section_name.lower()] = content
-                    
-                    # Get AI analysis using the same functions as generated resumes
-                    if not st.session_state.gemini_model:
-                        st.error("AI model not initialized. Please check your API configuration.")
-                        return
+                        # Add any additional sections found in parsed data
+                        for section_name, content in parsed_data['sections'].items():
+                            if section_name.lower() not in ['summary', 'objective', 'education', 'skills', 'projects']:
+                                resume_data[section_name.lower()] = content
+                        
+                        # Get AI analysis using the same functions as generated resumes
+                        if not st.session_state.gemini_model:
+                            st.error("AI model not initialized. Please check your API configuration.")
+                            return
 
-                    with st.expander("AI Resume Analysis", expanded=True):
-                        try:
-                            with st.spinner("Analyzing your resume with AI..."):
-                                # Get AI analysis
-                                analysis = analyze_resume_content(st.session_state.gemini_model, resume_data)
-                                ats_analysis = get_ats_optimization(st.session_state.gemini_model, resume_data)
+                        # Get AI analysis
+                        analysis = analyze_resume_content(st.session_state.gemini_model, resume_data)
+                        ats_analysis = get_ats_optimization(st.session_state.gemini_model, resume_data)
+                        
+                        # Store analysis in session state for later use
+                        st.session_state.ai_analysis = {
+                            'profile_analysis': analysis['profile_analysis'],
+                            'skills_analysis': analysis['skills_analysis'],
+                            'ats_analysis': ats_analysis['ats_analysis']
+                        }
+
+                        # Create tabs for different analysis sections
+                        tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
+                            "ATS Score", 
+                            "Profile Analysis",
+                            "Skills Analysis",
+                            "Optimization",
+                            "Summary Report",
+                            "Visualization"
+                        ])
+                        
+                        with tab1:
+                            st.subheader("ATS Compatibility Score")
+                            
+                            # Display scores in columns with improved styling
+                            col1, col2, col3 = st.columns(3)
+                            
+                            # Calculate total score percentage
+                            total_score = parsed_data['scores']['total_score']
+                            
+                            with col1:
+                                st.metric(
+                                    "Overall ATS Score", 
+                                    f"{total_score}%",
+                                    delta="Target: 85%+" if total_score < 85 else None,
+                                    delta_color="inverse"
+                                )
                                 
-                                # Store analysis in session state for later use
-                                st.session_state.ai_analysis = {
-                                    'profile_analysis': analysis['profile_analysis'],
-                                    'skills_analysis': analysis['skills_analysis'],
-                                    'ats_analysis': ats_analysis['ats_analysis']
+                            with col2:
+                                st.metric(
+                                    "Keyword Match", 
+                                    f"{parsed_data['scores']['keyword_score']}%",
+                                    delta="Target: 80%+" if parsed_data['scores']['keyword_score'] < 80 else None,
+                                    delta_color="inverse"
+                                )
+                                
+                            with col3:
+                                st.metric(
+                                    "Format Score", 
+                                    f"{parsed_data['scores']['format_score']}%",
+                                    delta="Target: 90%+" if parsed_data['scores']['format_score'] < 90 else None,
+                                    delta_color="inverse"
+                                )
+                                
+                            # Display score breakdown with improved visualization
+                            st.subheader("Detailed Score Breakdown")
+                            scores_df = pd.DataFrame({
+                                'Category': [
+                                    'Content Quality',
+                                    'Skills Coverage',
+                                    'Keyword Optimization',
+                                    'Format & Structure',
+                                    'Readability'
+                                ],
+                                'Score': [
+                                    parsed_data['scores']['content_score'],
+                                    parsed_data['scores']['skills_score'],
+                                    parsed_data['scores']['keyword_score'],
+                                    parsed_data['scores']['format_score'],
+                                    parsed_data['scores']['readability_score']
+                                ]
+                            })
+                            
+                            # Display as bar chart
+                            st.bar_chart(scores_df.set_index('Category'))
+                        
+                        with tab2:
+                            st.subheader("Profile Analysis")
+                            st.markdown(analysis['profile_analysis'])
+                        
+                        with tab3:
+                            st.subheader("Skills Analysis")
+                            try:
+                                # Get skills data based on the source (uploaded or generated)
+                                skills_data = {}
+                                
+                                if 'parsed_resume' in st.session_state and st.session_state.parsed_resume:
+                                    # For uploaded resumes
+                                    skills_data = {
+                                        'programming_languages': st.session_state.parsed_resume.get('scores', {}).get('detected_skills', {}).get('programming_languages', []),
+                                        'frameworks_libraries': st.session_state.parsed_resume.get('scores', {}).get('detected_skills', {}).get('frameworks_libraries', []),
+                                        'soft_skills': st.session_state.parsed_resume.get('scores', {}).get('detected_skills', {}).get('soft_skills', []),
+                                        'tools_technologies': st.session_state.parsed_resume.get('scores', {}).get('detected_skills', {}).get('tools_technologies', [])
+                                    }
+                                elif 'resume_data' in st.session_state and st.session_state.resume_data:
+                                    # For generated resumes
+                                    skills = st.session_state.resume_data.get('skills', {})
+                                    skills_data = {
+                                        'programming_languages': skills.get('programming', []),
+                                        'frameworks_libraries': skills.get('frameworks', []),
+                                        'soft_skills': skills.get('soft_skills', []),
+                                        'tools_technologies': skills.get('tools', [])
+                                    }
+                                    
+                                    # Clean up empty strings from lists
+                                    for category in skills_data:
+                                        skills_data[category] = [skill.strip() for skill in skills_data[category] if skill.strip()]
+
+                                if not any(skills_data.values()):
+                                    st.warning("No skills data available. Please ensure your resume includes skills information.")
+                                    return
+
+                                # Technical Skills Analysis
+                                st.markdown("### Technical Skills Analysis")
+                                
+                                # Programming Languages
+                                if skills_data.get('programming_languages'):
+                                    st.markdown("""
+                                    #### Programming Languages
+                                    Your resume demonstrates proficiency in multiple programming languages. Here's a detailed analysis:
+                                    """)
+                                    
+                                    langs = sorted(skills_data['programming_languages'])
+                                    st.markdown("**Core Languages:**")
+                                    st.markdown("\n".join([f"• `{lang}` - Demonstrated through projects and experience" 
+                                                        for lang in langs[:3]]))
+                                    
+                                    if len(langs) > 3:
+                                        st.markdown("\n**Additional Languages:**")
+                                        st.markdown("\n".join([f"• `{lang}`" for lang in langs[3:]]))
+                                    
+                                    st.markdown("""
+                                    **Analysis:**
+                                    Your programming language portfolio shows a good mix of modern and established technologies.
+                                    Consider focusing on deepening expertise in your core languages while maintaining working
+                                    knowledge of others.
+                                    """)
+
+                                # Frameworks and Libraries
+                                if skills_data.get('frameworks_libraries'):
+                                    st.markdown("""
+                                    #### Frameworks & Libraries
+                                    Your technical stack includes various frameworks and libraries:
+                                    """)
+                                    
+                                    frameworks = sorted(skills_data['frameworks_libraries'])
+                                    for fw in frameworks:
+                                        st.markdown(f"• `{fw}`")
+                                    
+                                    st.markdown("""
+                                    **Framework Proficiency:**
+                                    Your experience with these frameworks indicates a solid foundation in software development.
+                                    This diverse knowledge base allows you to adapt to different project requirements and
+                                    technical environments.
+                                    """)
+
+                                # Professional Skills Analysis
+                                st.markdown("### Professional Skills Analysis")
+                                
+                                if skills_data.get('soft_skills'):
+                                    st.markdown("""
+                                    #### Soft Skills & Professional Competencies
+                                    Your resume demonstrates the following professional capabilities:
+                                    """)
+                                    
+                                    soft_skills = sorted(skills_data['soft_skills'])
+                                    for skill in soft_skills:
+                                        st.markdown(f"• {skill}")
+                                    
+                                    st.markdown("""
+                                    **Professional Impact:**
+                                    Your soft skills complement your technical abilities, showing a well-rounded
+                                    professional profile. These skills are particularly valuable for:
+                                    • Team collaboration and leadership roles
+                                    • Project management and coordination
+                                    • Client interaction and communication
+                                    """)
+
+                                # Tools and Technologies
+                                if skills_data.get('tools_technologies'):
+                                    st.markdown("""
+                                    #### Tools & Technologies
+                                    Your proficiency extends to various development tools and technologies:
+                                    """)
+                                    
+                                    tools = sorted(skills_data['tools_technologies'])
+                                    for tool in tools:
+                                        st.markdown(f"• `{tool}`")
+                                    
+                                    st.markdown("""
+                                    **Technical Environment:**
+                                    Your experience with these tools indicates familiarity with modern development
+                                    practices and environments. This toolkit supports efficient development workflows
+                                    and collaborative work.
+                                    """)
+
+                                # Overall Skills Assessment
+                                st.markdown("### Overall Skills Assessment")
+                                
+                                # Calculate total skills and distributions
+                                total_skills = sum(len(skills) for skills in skills_data.values())
+                                
+                                st.markdown(f"""
+                                #### Comprehensive Analysis
+                                
+                                Your skill profile includes {total_skills} distinct competencies across various categories.
+                                The distribution shows:
+                                """)
+                                
+                                for category, skills in skills_data.items():
+                                    if skills:
+                                        percentage = (len(skills) / total_skills) * 100
+                                        st.markdown(f"• **{category.replace('_', ' ').title()}**: {len(skills)} skills ({percentage:.1f}%)")
+                                
+                                st.markdown("""
+                                #### Key Observations
+                                
+                                1. **Technical Depth**
+                                   - Your technical skills show both breadth and depth
+                                   - Good balance between fundamental and specialized technologies
+                                   - Evidence of continuous learning and adaptation
+                                
+                                2. **Professional Development**
+                                   - Strong foundation in core development practices
+                                   - Demonstrated ability to work with modern tools
+                                   - Clear progression in skill acquisition
+                                
+                                3. **Areas of Excellence**
+                                   - Solid programming language foundation
+                                   - Practical experience with industry-standard tools
+                                   - Balance of technical and soft skills
+                                """)
+
+                                # Recommendations
+                                st.markdown("""
+                                ### Recommendations for Growth
+                                
+                                Based on your current skill set, consider:
+                                
+                                1. **Skill Enhancement**
+                                   - Deepen expertise in your primary programming languages
+                                   - Stay updated with the latest versions and features
+                                   - Practice through complex projects
+                                
+                                2. **Knowledge Expansion**
+                                   - Explore complementary technologies
+                                   - Focus on high-demand areas in your field
+                                   - Maintain awareness of industry trends
+                                
+                                3. **Professional Development**
+                                   - Seek opportunities to lead technical initiatives
+                                   - Share knowledge through mentoring or documentation
+                                   - Contribute to open-source projects
+                                """)
+
+                            except Exception as e:
+                                st.error(f"An error occurred in skills analysis: {str(e)}")
+                                st.info("Please ensure your resume includes skills information and try again.")
+                        
+                        with tab4:
+                            st.subheader("ATS Analysis")
+                            
+                            if 'scores' in st.session_state.parsed_resume:
+                                scores = st.session_state.parsed_resume['scores']
+                                
+                                # Core ATS Analysis
+                                st.markdown("### ATS Score Overview")
+                                
+                                # Display scores in a clean layout
+                                col1, col2, col3 = st.columns(3)
+                                
+                                with col1:
+                                        st.metric(
+                                        "Overall ATS Score",
+                                        f"{scores.get('total_score', 0)}%",
+                                        delta="Target: 85%+" if scores.get('total_score', 0) < 85 else None,
+                                            delta_color="inverse"
+                                        )
+                                        
+                                with col2:
+                                        st.metric(
+                                        "Keyword Match",
+                                            f"{scores.get('keyword_score', 0)}%",
+                                            delta="Target: 80%+" if scores.get('keyword_score', 0) < 80 else None,
+                                            delta_color="inverse"
+                                        )
+                                        
+                                with col3:
+                                        st.metric(
+                                            "Format Score",
+                                            f"{scores.get('format_score', 0)}%",
+                                            delta="Target: 90%+" if scores.get('format_score', 0) < 90 else None,
+                                            delta_color="inverse"
+                                        )
+                                        
+                                # Score Breakdown
+                                st.markdown("### Score Breakdown")
+                                scores_df = pd.DataFrame({
+                                    'Category': [
+                                        'Content Quality',
+                                        'Skills Coverage',
+                                        'Keyword Optimization',
+                                        'Format & Structure',
+                                        'Readability'
+                                    ],
+                                    'Score': [
+                                        scores.get('content_score', 0),
+                                        scores.get('skills_score', 0),
+                                        scores.get('keyword_score', 0),
+                                        scores.get('format_score', 0),
+                                        scores.get('readability_score', 0)
+                                    ]
+                                })
+                                    
+                                # Display as bar chart
+                                st.bar_chart(scores_df.set_index('Category'))
+                                    
+                                # Quick Summary
+                                total_score = scores.get('total_score', 0)
+                                if total_score >= 85:
+                                    st.success("Your resume is well-optimized for ATS systems.")
+                                elif total_score >= 70:
+                                    st.warning("Your resume meets basic ATS requirements but has room for improvement.")
+                                else:
+                                    st.error("Your resume may need optimization for better ATS performance.")
+                                
+                            else:
+                                st.warning("No ATS analysis data available. Please ensure your resume has been properly analyzed.")
+                                
+                            st.markdown(ats_analysis['ats_analysis'])
+                        
+                        with tab5:
+                            st.subheader("Executive Summary Report")
+                            
+                            if 'scores' in st.session_state.parsed_resume:
+                                total_score = st.session_state.parsed_resume['scores'].get('total_score', 0)
+                                
+                                # Overall Assessment
+                                st.markdown("### Overall Assessment")
+                                st.markdown("""
+                                Your resume has been analyzed across multiple dimensions including content quality, 
+                                ATS compatibility, skills presentation, and overall professional impact. Here's a 
+                                comprehensive summary of the findings:
+                                """)
+                                
+                                # Core Metrics Summary
+                                st.markdown("#### Key Performance Metrics")
+                                st.markdown(f"""Your resume achieved an overall score of **{total_score}%** with the following key observations:
+
+• **Content Strength**: {st.session_state.parsed_resume['scores'].get('content_score', 0)}%
+- Measures the quality and relevance of your professional experience
+- Evaluates the impact and clarity of your achievements
+
+• **ATS Compatibility**: {st.session_state.parsed_resume['scores'].get('keyword_score', 0)}%
+- Assesses how well your resume aligns with ATS systems
+- Evaluates keyword optimization and format compliance
+
+• **Skills Presentation**: {st.session_state.parsed_resume['scores'].get('skills_score', 0)}%
+- Analyzes the breadth and depth of your technical capabilities
+- Evaluates how effectively skills are contextualized
+""")
+
+                                # Profile Analysis Summary
+                                st.markdown("#### Professional Profile Analysis")
+                                st.markdown("""Your professional profile demonstrates the following characteristics:
+
+• **Experience Presentation**
+- Career progression and achievements are effectively structured
+- Professional impact is quantified where applicable
+- Key responsibilities align with industry expectations
+
+• **Technical Expertise**
+- Demonstrates proficiency in relevant technical domains
+- Shows adaptability across different technologies
+- Highlights practical application of skills
+
+• **Professional Development**
+- Shows continuous learning and skill advancement
+- Indicates ability to adapt to industry changes
+- Demonstrates professional growth trajectory
+""")
+
+                                # Skills Distribution
+                                if 'skills_data' in locals():
+                                    st.markdown("#### Skills Distribution")
+                                    st.markdown("""
+                                    Your skill set demonstrates the following distribution:
+                                    
+                                    • **Technical Competencies**
+                                    - Programming Languages: Core and supplementary technologies
+                                    - Frameworks & Tools: Industry-standard development tools
+                                    - Technical Methodologies: Development and deployment practices
+                                    
+                                    • **Professional Capabilities**
+                                    - Project Management: Planning and execution abilities
+                                    - Team Collaboration: Communication and leadership skills
+                                    - Problem Solving: Analytical and strategic thinking
+                                    """)
+                                
+                                # Overall Impact
+                                st.markdown("#### Overall Professional Impact")
+                                if total_score >= 85:
+                                    impact_assessment = """
+                                    Your resume presents a **strong professional profile** with:
+                                    
+                                    • **Exceptional Qualities**
+                                    - Well-optimized for ATS systems
+                                    - Clear demonstration of professional expertise
+                                    - Strong alignment with industry standards
+                                    - Effective communication of achievements
+                                    """
+                                elif total_score >= 70:
+                                    impact_assessment = """
+                                    Your resume presents a **solid professional profile** with:
+                                    
+                                    • **Notable Strengths**
+                                    - Good foundation for ATS compatibility
+                                    - Clear presentation of professional experience
+                                    - Adequate skill demonstration
+                                    - Defined career progression
+                                    """
+                                else:
+                                    impact_assessment = """
+                                    Your resume presents a **developing professional profile** with:
+                                    
+                                    • **Core Elements**
+                                    - Basic professional presentation
+                                    - Fundamental skill documentation
+                                    - Career experience outline
+                                    - Development opportunities identified
+                                    """
+                                
+                                st.markdown(impact_assessment)
+                                
+                                # Market Readiness
+                                st.markdown("#### Market Readiness Assessment")
+                                st.markdown(f"""
+                                Based on the comprehensive analysis, your resume demonstrates:
+                                
+                                • **Overall Market Position**
+                                - {'Strong' if total_score >= 85 else 'Moderate' if total_score >= 70 else 'Basic'} competitive standing
+                                - {'Excellent' if total_score >= 85 else 'Good' if total_score >= 70 else 'Fair'} industry alignment
+                                - {'High' if total_score >= 85 else 'Moderate' if total_score >= 70 else 'Basic'} professional impact
+                                
+                                • **Technical Readiness**
+                                - {'Advanced' if st.session_state.parsed_resume['scores'].get('skills_score', 0) >= 85 else 'Intermediate' if st.session_state.parsed_resume['scores'].get('skills_score', 0) >= 70 else 'Basic'} technical proficiency
+                                - {'Strong' if st.session_state.parsed_resume['scores'].get('content_score', 0) >= 85 else 'Good' if st.session_state.parsed_resume['scores'].get('content_score', 0) >= 70 else 'Basic'} experience documentation
+                                - {'Excellent' if st.session_state.parsed_resume['scores'].get('keyword_score', 0) >= 85 else 'Good' if st.session_state.parsed_resume['scores'].get('keyword_score', 0) >= 70 else 'Basic'} keyword optimization
+                                """)
+                                
+                            else:
+                                st.warning("No analysis data available. Please ensure your resume has been properly analyzed.")
+
+                        with tab6:
+                            st.subheader("Interactive Resume Analysis Visualization")
+                            if not 'scores' in st.session_state.parsed_resume:
+                                st.warning("No analysis data available for visualization. Please ensure your resume has been properly analyzed.")
+                                return
+                            
+                            scores = st.session_state.parsed_resume['scores']
+                            
+                            # Create two columns for the visualizations
+                            col1, col2 = st.columns(2)
+                            
+                            with col1:
+                                # Radar Chart for Overall Scores
+                                categories = ['Content', 'Skills', 'Keywords', 'Format', 'Readability']
+                                values = [
+                                    scores.get('content_score', 0),
+                                    scores.get('skills_score', 0),
+                                    scores.get('keyword_score', 0),
+                                    scores.get('format_score', 0),
+                                    scores.get('readability_score', 0)
+                                ]
+                                
+                                fig_radar = go.Figure()
+                                fig_radar.add_trace(go.Scatterpolar(
+                                    r=values,
+                                    theta=categories,
+                                    fill='toself',
+                                    name='Your Resume'
+                                ))
+                                
+                                fig_radar.update_layout(
+                                    polar=dict(
+                                        radialaxis=dict(
+                                            visible=True,
+                                            range=[0, 100]
+                                        )),
+                                    showlegend=False,
+                                    title="Resume Score Distribution"
+                                )
+                                
+                                st.plotly_chart(fig_radar, use_container_width=True)
+                            
+                            with col2:
+                                # Gauge chart for Overall ATS Score
+                                total_score = scores.get('total_score', 0)
+                                
+                                fig_gauge = go.Figure(go.Indicator(
+                                    mode = "gauge+number",
+                                    value = total_score,
+                                    domain = {'x': [0, 1], 'y': [0, 1]},
+                                    gauge = {
+                                        'axis': {'range': [0, 100]},
+                                        'bar': {'color': "darkblue"},
+                                        'steps': [
+                                            {'range': [0, 50], 'color': "lightgray"},
+                                            {'range': [50, 70], 'color': "gray"},
+                                            {'range': [70, 85], 'color': "lightblue"},
+                                            {'range': [85, 100], 'color': "royalblue"}
+                                        ],
+                                        'threshold': {
+                                            'line': {'color': "red", 'width': 4},
+                                            'thickness': 0.75,
+                                            'value': 85
+                                        }
+                                    },
+                                    title = {'text': "Overall ATS Score"}
+                                ))
+                                
+                                st.plotly_chart(fig_gauge, use_container_width=True)
+                            
+                            # Skills Distribution Chart
+                            if 'skills_data' in locals():
+                                # Prepare skills data
+                                skills_categories = list(skills_data.keys())
+                                skills_counts = [len(skills) for skills in skills_data.values()]
+                                
+                                # Create a donut chart
+                                fig_skills = go.Figure(data=[go.Pie(
+                                    labels=skills_categories,
+                                    values=skills_counts,
+                                    hole=.3,
+                                    textinfo='label+percent'
+                                )])
+                                
+                                fig_skills.update_layout(
+                                    title="Skills Distribution",
+                                    annotations=[dict(text='Skills', x=0.5, y=0.5, font_size=20, showarrow=False)]
+                                )
+                                
+                                st.plotly_chart(fig_skills, use_container_width=True)
+                            
+                            # Score Trends Bar Chart
+                            score_data = pd.DataFrame({
+                                'Category': ['Content Quality', 'Skills Coverage', 'Keyword Match', 'Format Score', 'Readability'],
+                                'Score': [
+                                    scores.get('content_score', 0),
+                                    scores.get('skills_score', 0),
+                                    scores.get('keyword_score', 0),
+                                    scores.get('format_score', 0),
+                                    scores.get('readability_score', 0)
+                                ],
+                                'Target': [90, 85, 80, 90, 85]
+                            })
+                            
+                            fig_bars = go.Figure()
+                            fig_bars.add_trace(go.Bar(
+                                name='Your Score',
+                                x=score_data['Category'],
+                                y=score_data['Score'],
+                                marker_color='royalblue'
+                            ))
+                            fig_bars.add_trace(go.Bar(
+                                name='Target Score',
+                                x=score_data['Category'],
+                                y=score_data['Target'],
+                                marker_color='lightgray'
+                            ))
+                            
+                            fig_bars.update_layout(
+                                title="Score Comparison with Targets",
+                                barmode='group',
+                                yaxis_title="Score (%)",
+                                xaxis_title="Categories"
+                            )
+                            
+                            st.plotly_chart(fig_bars, use_container_width=True)
+                            
+                            # Interactive Metrics Explorer
+                            st.subheader("Interactive Metrics Explorer")
+                            
+                            # Create selection for metrics
+                            selected_metrics = st.multiselect(
+                                "Select metrics to compare",
+                                ['Content Score', 'Skills Score', 'Keyword Score', 'Format Score', 'Readability Score'],
+                                default=['Content Score', 'Skills Score']
+                            )
+                            
+                            if selected_metrics:
+                                # Prepare data for selected metrics
+                                metric_values = {
+                                    'Content Score': scores.get('content_score', 0),
+                                    'Skills Score': scores.get('skills_score', 0),
+                                    'Keyword Score': scores.get('keyword_score', 0),
+                                    'Format Score': scores.get('format_score', 0),
+                                    'Readability Score': scores.get('readability_score', 0)
                                 }
                                 
-                                # Display Profile Summary Analysis
-                                st.subheader("Profile Summary Analysis")
-                                st.markdown(analysis['profile_analysis'])
+                                selected_data = {
+                                    metric: metric_values[metric]
+                                    for metric in selected_metrics
+                                }
                                 
-                                # Display Skills Analysis
-                                st.subheader("Skills Analysis")
-                                st.markdown(analysis['skills_analysis'])
+                                # Create comparison chart
+                                fig_compare = go.Figure()
+                                for metric, value in selected_data.items():
+                                    fig_compare.add_trace(go.Bar(
+                                        name=metric,
+                                        x=[metric],
+                                        y=[value],
+                                        text=[f"{value}%"],
+                                        textposition='auto',
+                                    ))
                                 
-                                # Display ATS Optimization
-                                st.subheader("ATS Optimization")
-                                st.markdown(ats_analysis['ats_analysis'])
-                                
-                                # Add download button for current analysis
-                                current_suggestions = (
-                                    f"AI Resume Analysis Report\n"
-                                    f"Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
-                                    f"For: {resume_data['profile_summary']['target_role']}\n\n"
-                                    f"=== Profile Summary Analysis ===\n"
-                                    f"{analysis['profile_analysis']}\n\n"
-                                    f"=== Skills Analysis ===\n"
-                                    f"{analysis['skills_analysis']}\n\n"
-                                    f"=== ATS Optimization ===\n"
-                                    f"{ats_analysis['ats_analysis']}\n"
+                                fig_compare.update_layout(
+                                    title="Metrics Comparison",
+                                    yaxis_title="Score (%)",
+                                    yaxis_range=[0, 100],
+                                    showlegend=False
                                 )
                                 
-                                st.download_button(
-                                    label="Download Analysis Report",
-                                    data=current_suggestions,
-                                    file_name=f"AI_Resume_Analysis_{datetime.now().strftime('%Y%m%d')}.txt",
-                                    mime="text/plain"
-                                )
-                        except Exception as e:
-                            st.error(f"An error occurred during AI analysis: {str(e)}")
-                            st.info("Please check your API key or try again later.")
+                                st.plotly_chart(fig_compare, use_container_width=True)
+                    else:
+                        st.error("Could not parse the resume. Please check the file format and try again.")
             except Exception as e:
                 st.error(f"Error during analysis: {str(e)}")
                 st.info("Please try again or contact support if the issue persists.")
@@ -549,37 +1132,605 @@ def main():
                                 'ats_analysis': ats_analysis['ats_analysis']
                             }
                             
-                            # Display Profile Summary Analysis
-                            st.subheader("Profile Summary Analysis")
-                            st.markdown(analysis['profile_analysis'])
+                            # Create tabs for different analysis sections
+                            tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
+                                "ATS Score", 
+                                "Profile Analysis",
+                                "Skills Analysis",
+                                "Optimization",
+                                "Summary Report",
+                                "Visualization"
+                            ])
                             
-                            # Display Skills Analysis
-                            st.subheader("Skills Analysis")
-                            st.markdown(analysis['skills_analysis'])
+                            with tab1:
+                                st.subheader("ATS Compatibility Score")
+                                
+                                # Display scores in columns with improved styling
+                                col1, col2, col3 = st.columns(3)
+                                
+                                # Calculate total score percentage
+                                total_score = st.session_state.parsed_resume['scores']['total_score']
+                                
+                                with col1:
+                                    st.metric("Overall ATS Score", f"{total_score}%")
+                                
+                                with col2:
+                                    st.metric("Keyword Match", f"{st.session_state.parsed_resume['scores']['keyword_score']}%")
+                                
+                                with col3:
+                                    st.metric("Format Score", f"{st.session_state.parsed_resume['scores']['format_score']}%")
+                                
+                                # Display score breakdown with improved visualization
+                                st.subheader("Detailed Score Breakdown")
+                                scores_df = pd.DataFrame({
+                                    'Category': [
+                                        'Content Quality',
+                                        'Skills Coverage',
+                                        'Keyword Optimization',
+                                        'Format & Structure',
+                                        'Readability'
+                                    ],
+                                    'Score': [
+                                        st.session_state.parsed_resume['scores']['content_score'],
+                                        st.session_state.parsed_resume['scores']['skills_score'],
+                                        st.session_state.parsed_resume['scores']['keyword_score'],
+                                        st.session_state.parsed_resume['scores']['format_score'],
+                                        st.session_state.parsed_resume['scores']['readability_score']
+                                    ]
+                                })
+                                
+                                # Display as bar chart
+                                st.bar_chart(scores_df.set_index('Category'))
                             
-                            # Display ATS Optimization
-                            st.subheader("ATS Optimization")
-                            st.markdown(ats_analysis['ats_analysis'])
+                            with tab2:
+                                st.subheader("Profile Analysis")
+                                st.markdown(analysis['profile_analysis'])
                             
-                            # Add download button for current analysis
-                            current_suggestions = (
-                                f"AI Resume Analysis Report\n"
-                                f"Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
-                                f"For: {st.session_state.resume_data['personal_info']['name']}\n\n"
-                                f"=== Profile Summary Analysis ===\n"
-                                f"{analysis['profile_analysis']}\n\n"
-                                f"=== Skills Analysis ===\n"
-                                f"{analysis['skills_analysis']}\n\n"
-                                f"=== ATS Optimization ===\n"
-                                f"{ats_analysis['ats_analysis']}\n"
-                            )
+                            with tab3:
+                                st.subheader("Skills Analysis")
+                                try:
+                                    # Get skills data based on the source (uploaded or generated)
+                                    skills_data = {}
+                                    
+                                    if 'parsed_resume' in st.session_state and st.session_state.parsed_resume:
+                                        # For uploaded resumes
+                                        skills_data = {
+                                            'programming_languages': st.session_state.parsed_resume.get('scores', {}).get('detected_skills', {}).get('programming_languages', []),
+                                            'frameworks_libraries': st.session_state.parsed_resume.get('scores', {}).get('detected_skills', {}).get('frameworks_libraries', []),
+                                            'soft_skills': st.session_state.parsed_resume.get('scores', {}).get('detected_skills', {}).get('soft_skills', []),
+                                            'tools_technologies': st.session_state.parsed_resume.get('scores', {}).get('detected_skills', {}).get('tools_technologies', [])
+                                        }
+                                    elif 'resume_data' in st.session_state and st.session_state.resume_data:
+                                        # For generated resumes
+                                        skills = st.session_state.resume_data.get('skills', {})
+                                        skills_data = {
+                                            'programming_languages': skills.get('programming', []),
+                                            'frameworks_libraries': skills.get('frameworks', []),
+                                            'soft_skills': skills.get('soft_skills', []),
+                                            'tools_technologies': skills.get('tools', [])
+                                        }
+                                        
+                                        # Clean up empty strings from lists
+                                        for category in skills_data:
+                                            skills_data[category] = [skill.strip() for skill in skills_data[category] if skill.strip()]
+
+                                    if not any(skills_data.values()):
+                                        st.warning("No skills data available. Please ensure your resume includes skills information.")
+                                        return
+
+                                    # Technical Skills Analysis
+                                    st.markdown("### Technical Skills Analysis")
+                                    
+                                    # Programming Languages
+                                    if skills_data.get('programming_languages'):
+                                        st.markdown("""
+                                        #### Programming Languages
+                                        Your resume demonstrates proficiency in multiple programming languages. Here's a detailed analysis:
+                                        """)
+                                        
+                                        langs = sorted(skills_data['programming_languages'])
+                                        st.markdown("**Core Languages:**")
+                                        st.markdown("\n".join([f"• `{lang}` - Demonstrated through projects and experience" 
+                                                            for lang in langs[:3]]))
+                                        
+                                        if len(langs) > 3:
+                                            st.markdown("\n**Additional Languages:**")
+                                            st.markdown("\n".join([f"• `{lang}`" for lang in langs[3:]]))
+                                        
+                                        st.markdown("""
+                                        **Analysis:**
+                                        Your programming language portfolio shows a good mix of modern and established technologies.
+                                        Consider focusing on deepening expertise in your core languages while maintaining working
+                                        knowledge of others.
+                                        """)
+
+                                    # Frameworks and Libraries
+                                    if skills_data.get('frameworks_libraries'):
+                                        st.markdown("""
+                                        #### Frameworks & Libraries
+                                        Your technical stack includes various frameworks and libraries:
+                                        """)
+                                        
+                                        frameworks = sorted(skills_data['frameworks_libraries'])
+                                        for fw in frameworks:
+                                            st.markdown(f"• `{fw}`")
+                                        
+                                        st.markdown("""
+                                        **Framework Proficiency:**
+                                        Your experience with these frameworks indicates a solid foundation in software development.
+                                        This diverse knowledge base allows you to adapt to different project requirements and
+                                        technical environments.
+                                        """)
+
+                                    # Professional Skills Analysis
+                                    st.markdown("### Professional Skills Analysis")
+                                    
+                                    if skills_data.get('soft_skills'):
+                                        st.markdown("""
+                                        #### Soft Skills & Professional Competencies
+                                        Your resume demonstrates the following professional capabilities:
+                                        """)
+                                        
+                                        soft_skills = sorted(skills_data['soft_skills'])
+                                        for skill in soft_skills:
+                                            st.markdown(f"• {skill}")
+                                        
+                                        st.markdown("""
+                                        **Professional Impact:**
+                                        Your soft skills complement your technical abilities, showing a well-rounded
+                                        professional profile. These skills are particularly valuable for:
+                                        • Team collaboration and leadership roles
+                                        • Project management and coordination
+                                        • Client interaction and communication
+                                        """)
+
+                                    # Tools and Technologies
+                                    if skills_data.get('tools_technologies'):
+                                        st.markdown("""
+                                        #### Tools & Technologies
+                                        Your proficiency extends to various development tools and technologies:
+                                        """)
+                                        
+                                        tools = sorted(skills_data['tools_technologies'])
+                                        for tool in tools:
+                                            st.markdown(f"• `{tool}`")
+                                        
+                                        st.markdown("""
+                                        **Technical Environment:**
+                                        Your experience with these tools indicates familiarity with modern development
+                                        practices and environments. This toolkit supports efficient development workflows
+                                        and collaborative work.
+                                        """)
+
+                                    # Overall Skills Assessment
+                                    st.markdown("### Overall Skills Assessment")
+                                    
+                                    # Calculate total skills and distributions
+                                    total_skills = sum(len(skills) for skills in skills_data.values())
+                                    
+                                    st.markdown(f"""
+                                    #### Comprehensive Analysis
+                                    
+                                    Your skill profile includes {total_skills} distinct competencies across various categories.
+                                    The distribution shows:
+                                    """)
+                                    
+                                    for category, skills in skills_data.items():
+                                        if skills:
+                                            percentage = (len(skills) / total_skills) * 100
+                                            st.markdown(f"• **{category.replace('_', ' ').title()}**: {len(skills)} skills ({percentage:.1f}%)")
+                                    
+                                    st.markdown("""
+                                    #### Key Observations
+                                    
+                                    1. **Technical Depth**
+                                       - Your technical skills show both breadth and depth
+                                       - Good balance between fundamental and specialized technologies
+                                       - Evidence of continuous learning and adaptation
+                                    
+                                    2. **Professional Development**
+                                       - Strong foundation in core development practices
+                                       - Demonstrated ability to work with modern tools
+                                       - Clear progression in skill acquisition
+                                    
+                                    3. **Areas of Excellence**
+                                       - Solid programming language foundation
+                                       - Practical experience with industry-standard tools
+                                       - Balance of technical and soft skills
+                                    """)
+
+                                    # Recommendations
+                                    st.markdown("""
+                                    ### Recommendations for Growth
+                                    
+                                    Based on your current skill set, consider:
+                                    
+                                    1. **Skill Enhancement**
+                                       - Deepen expertise in your primary programming languages
+                                       - Stay updated with the latest versions and features
+                                       - Practice through complex projects
+                                    
+                                    2. **Knowledge Expansion**
+                                       - Explore complementary technologies
+                                       - Focus on high-demand areas in your field
+                                       - Maintain awareness of industry trends
+                                    
+                                    3. **Professional Development**
+                                       - Seek opportunities to lead technical initiatives
+                                       - Share knowledge through mentoring or documentation
+                                       - Contribute to open-source projects
+                                    """)
+
+                                except Exception as e:
+                                    st.error(f"An error occurred in skills analysis: {str(e)}")
+                                    st.info("Please ensure your resume includes skills information and try again.")
                             
-                            st.download_button(
-                                label="Download Analysis Report",
-                                data=current_suggestions,
-                                file_name=f"AI_Resume_Analysis_{datetime.now().strftime('%Y%m%d')}.txt",
-                                mime="text/plain"
-                            )
+                            with tab4:
+                                st.subheader("ATS Analysis")
+                                
+                                if 'scores' in st.session_state.parsed_resume:
+                                    scores = st.session_state.parsed_resume['scores']
+                                    
+                                    # Core ATS Analysis
+                                    st.markdown("### ATS Score Overview")
+                                    
+                                    # Display scores in a clean layout
+                                    col1, col2, col3 = st.columns(3)
+                                    
+                                    with col1:
+                                        st.metric(
+                                            "Overall ATS Score",
+                                            f"{scores.get('total_score', 0)}%",
+                                            delta="Target: 85%+" if scores.get('total_score', 0) < 85 else None,
+                                            delta_color="inverse"
+                                        )
+                                        
+                                    with col2:
+                                        st.metric(
+                                            "Keyword Match",
+                                            f"{scores.get('keyword_score', 0)}%",
+                                            delta="Target: 80%+" if scores.get('keyword_score', 0) < 80 else None,
+                                            delta_color="inverse"
+                                        )
+                                        
+                                    with col3:
+                                        st.metric(
+                                            "Format Score",
+                                            f"{scores.get('format_score', 0)}%",
+                                            delta="Target: 90%+" if scores.get('format_score', 0) < 90 else None,
+                                            delta_color="inverse"
+                                        )
+                                        
+                                    # Score Breakdown
+                                    st.markdown("### Score Breakdown")
+                                    scores_df = pd.DataFrame({
+                                        'Category': [
+                                            'Content Quality',
+                                            'Skills Coverage',
+                                            'Keyword Optimization',
+                                            'Format & Structure',
+                                            'Readability'
+                                        ],
+                                        'Score': [
+                                            scores.get('content_score', 0),
+                                            scores.get('skills_score', 0),
+                                            scores.get('keyword_score', 0),
+                                            scores.get('format_score', 0),
+                                            scores.get('readability_score', 0)
+                                        ]
+                                    })
+                                    
+                                    # Display as bar chart
+                                    st.bar_chart(scores_df.set_index('Category'))
+                                    
+                                    # Quick Summary
+                                    total_score = scores.get('total_score', 0)
+                                    if total_score >= 85:
+                                        st.success("Your resume is well-optimized for ATS systems.")
+                                    elif total_score >= 70:
+                                        st.warning("Your resume meets basic ATS requirements but has room for improvement.")
+                                    else:
+                                        st.error("Your resume may need optimization for better ATS performance.")
+                                    
+                                else:
+                                    st.warning("No ATS analysis data available. Please ensure your resume has been properly analyzed.")
+                                
+                                st.markdown(ats_analysis['ats_analysis'])
+                            
+                            with tab5:
+                                st.subheader("Executive Summary Report")
+                                
+                                if 'scores' in st.session_state.parsed_resume:
+                                    total_score = st.session_state.parsed_resume['scores'].get('total_score', 0)
+                                    
+                                    # Overall Assessment
+                                    st.markdown("### Overall Assessment")
+                                    st.markdown("""
+                                    Your resume has been analyzed across multiple dimensions including content quality, 
+                                    ATS compatibility, skills presentation, and overall professional impact. Here's a 
+                                    comprehensive summary of the findings:
+                                    """)
+                                    
+                                    # Core Metrics Summary
+                                    st.markdown("#### Key Performance Metrics")
+                                    st.markdown(f"""Your resume achieved an overall score of **{total_score}%** with the following key observations:
+
+• **Content Strength**: {st.session_state.parsed_resume['scores'].get('content_score', 0)}%
+- Measures the quality and relevance of your professional experience
+- Evaluates the impact and clarity of your achievements
+
+• **ATS Compatibility**: {st.session_state.parsed_resume['scores'].get('keyword_score', 0)}%
+- Assesses how well your resume aligns with ATS systems
+- Evaluates keyword optimization and format compliance
+
+• **Skills Presentation**: {st.session_state.parsed_resume['scores'].get('skills_score', 0)}%
+- Analyzes the breadth and depth of your technical capabilities
+- Evaluates how effectively skills are contextualized
+""")
+
+                                    # Profile Analysis Summary
+                                    st.markdown("#### Professional Profile Analysis")
+                                    st.markdown("""Your professional profile demonstrates the following characteristics:
+
+• **Experience Presentation**
+- Career progression and achievements are effectively structured
+- Professional impact is quantified where applicable
+- Key responsibilities align with industry expectations
+
+• **Technical Expertise**
+- Demonstrates proficiency in relevant technical domains
+- Shows adaptability across different technologies
+- Highlights practical application of skills
+
+• **Professional Development**
+- Shows continuous learning and skill advancement
+- Indicates ability to adapt to industry changes
+- Demonstrates professional growth trajectory
+""")
+
+                                    # Skills Distribution
+                                    if 'skills_data' in locals():
+                                        st.markdown("#### Skills Distribution")
+                                        st.markdown("""
+                                        Your skill set demonstrates the following distribution:
+                                        
+                                        • **Technical Competencies**
+                                        - Programming Languages: Core and supplementary technologies
+                                        - Frameworks & Tools: Industry-standard development tools
+                                        - Technical Methodologies: Development and deployment practices
+                                        
+                                        • **Professional Capabilities**
+                                        - Project Management: Planning and execution abilities
+                                        - Team Collaboration: Communication and leadership skills
+                                        - Problem Solving: Analytical and strategic thinking
+                                        """)
+                                    
+                                    # Overall Impact
+                                    st.markdown("#### Overall Professional Impact")
+                                    if total_score >= 85:
+                                        impact_assessment = """
+                                        Your resume presents a **strong professional profile** with:
+                                        
+                                        • **Exceptional Qualities**
+                                        - Well-optimized for ATS systems
+                                        - Clear demonstration of professional expertise
+                                        - Strong alignment with industry standards
+                                        - Effective communication of achievements
+                                        """
+                                    elif total_score >= 70:
+                                        impact_assessment = """
+                                        Your resume presents a **solid professional profile** with:
+                                        
+                                        • **Notable Strengths**
+                                        - Good foundation for ATS compatibility
+                                        - Clear presentation of professional experience
+                                        - Adequate skill demonstration
+                                        - Defined career progression
+                                        """
+                                    else:
+                                        impact_assessment = """
+                                        Your resume presents a **developing professional profile** with:
+                                        
+                                        • **Core Elements**
+                                        - Basic professional presentation
+                                        - Fundamental skill documentation
+                                        - Career experience outline
+                                        - Development opportunities identified
+                                        """
+                                    
+                                    st.markdown(impact_assessment)
+                                    
+                                    # Market Readiness
+                                    st.markdown("#### Market Readiness Assessment")
+                                    st.markdown(f"""
+                                    Based on the comprehensive analysis, your resume demonstrates:
+                                    
+                                    • **Overall Market Position**
+                                    - {'Strong' if total_score >= 85 else 'Moderate' if total_score >= 70 else 'Basic'} competitive standing
+                                    - {'Excellent' if total_score >= 85 else 'Good' if total_score >= 70 else 'Fair'} industry alignment
+                                    - {'High' if total_score >= 85 else 'Moderate' if total_score >= 70 else 'Basic'} professional impact
+                                    
+                                    • **Technical Readiness**
+                                    - {'Advanced' if st.session_state.parsed_resume['scores'].get('skills_score', 0) >= 85 else 'Intermediate' if st.session_state.parsed_resume['scores'].get('skills_score', 0) >= 70 else 'Basic'} technical proficiency
+                                    - {'Strong' if st.session_state.parsed_resume['scores'].get('content_score', 0) >= 85 else 'Good' if st.session_state.parsed_resume['scores'].get('content_score', 0) >= 70 else 'Basic'} experience documentation
+                                    - {'Excellent' if st.session_state.parsed_resume['scores'].get('keyword_score', 0) >= 85 else 'Good' if st.session_state.parsed_resume['scores'].get('keyword_score', 0) >= 70 else 'Basic'} keyword optimization
+                                    """)
+                                    
+                                else:
+                                    st.warning("No analysis data available. Please ensure your resume has been properly analyzed.")
+
+                            with tab6:
+                                st.subheader("Interactive Resume Analysis Visualization")
+                                if not 'scores' in st.session_state.parsed_resume:
+                                    st.warning("No analysis data available for visualization. Please ensure your resume has been properly analyzed.")
+                                    return
+                                
+                                scores = st.session_state.parsed_resume['scores']
+                                
+                                # Create two columns for the visualizations
+                                col1, col2 = st.columns(2)
+                                
+                                with col1:
+                                    # Radar Chart for Overall Scores
+                                    categories = ['Content', 'Skills', 'Keywords', 'Format', 'Readability']
+                                    values = [
+                                        scores.get('content_score', 0),
+                                        scores.get('skills_score', 0),
+                                        scores.get('keyword_score', 0),
+                                        scores.get('format_score', 0),
+                                        scores.get('readability_score', 0)
+                                    ]
+                                    
+                                    fig_radar = go.Figure()
+                                    fig_radar.add_trace(go.Scatterpolar(
+                                        r=values,
+                                        theta=categories,
+                                        fill='toself',
+                                        name='Your Resume'
+                                    ))
+                                    
+                                    fig_radar.update_layout(
+                                        polar=dict(
+                                            radialaxis=dict(
+                                                visible=True,
+                                                range=[0, 100]
+                                            )),
+                                            showlegend=False,
+                                            title="Resume Score Distribution"
+                                        )
+                                    
+                                    st.plotly_chart(fig_radar, use_container_width=True)
+                                
+                                with col2:
+                                    # Gauge chart for Overall ATS Score
+                                    total_score = scores.get('total_score', 0)
+                                    
+                                    fig_gauge = go.Figure(go.Indicator(
+                                        mode = "gauge+number",
+                                        value = total_score,
+                                        domain = {'x': [0, 1], 'y': [0, 1]},
+                                        gauge = {
+                                            'axis': {'range': [0, 100]},
+                                            'bar': {'color': "darkblue"},
+                                            'steps': [
+                                                {'range': [0, 50], 'color': "lightgray"},
+                                                {'range': [50, 70], 'color': "gray"},
+                                                {'range': [70, 85], 'color': "lightblue"},
+                                                {'range': [85, 100], 'color': "royalblue"}
+                                            ],
+                                            'threshold': {
+                                                'line': {'color': "red", 'width': 4},
+                                                'thickness': 0.75,
+                                                'value': 85
+                                            }
+                                        },
+                                        title = {'text': "Overall ATS Score"}
+                                    ))
+                                    
+                                    st.plotly_chart(fig_gauge, use_container_width=True)
+                                
+                                # Skills Distribution Chart
+                                if 'skills_data' in locals():
+                                    # Prepare skills data
+                                    skills_categories = list(skills_data.keys())
+                                    skills_counts = [len(skills) for skills in skills_data.values()]
+                                    
+                                    # Create a donut chart
+                                    fig_skills = go.Figure(data=[go.Pie(
+                                        labels=skills_categories,
+                                        values=skills_counts,
+                                        hole=.3,
+                                        textinfo='label+percent'
+                                    )])
+                                    
+                                    fig_skills.update_layout(
+                                        title="Skills Distribution",
+                                        annotations=[dict(text='Skills', x=0.5, y=0.5, font_size=20, showarrow=False)]
+                                    )
+                                    
+                                    st.plotly_chart(fig_skills, use_container_width=True)
+                                
+                                # Score Trends Bar Chart
+                                score_data = pd.DataFrame({
+                                    'Category': ['Content Quality', 'Skills Coverage', 'Keyword Match', 'Format Score', 'Readability'],
+                                    'Score': [
+                                        scores.get('content_score', 0),
+                                        scores.get('skills_score', 0),
+                                        scores.get('keyword_score', 0),
+                                        scores.get('format_score', 0),
+                                        scores.get('readability_score', 0)
+                                    ],
+                                    'Target': [90, 85, 80, 90, 85]
+                                })
+                                
+                                fig_bars = go.Figure()
+                                fig_bars.add_trace(go.Bar(
+                                    name='Your Score',
+                                    x=score_data['Category'],
+                                    y=score_data['Score'],
+                                    marker_color='royalblue'
+                                ))
+                                fig_bars.add_trace(go.Bar(
+                                    name='Target Score',
+                                    x=score_data['Category'],
+                                    y=score_data['Target'],
+                                    marker_color='lightgray'
+                                ))
+                                
+                                fig_bars.update_layout(
+                                    title="Score Comparison with Targets",
+                                    barmode='group',
+                                    yaxis_title="Score (%)",
+                                    xaxis_title="Categories"
+                                )
+                                
+                                st.plotly_chart(fig_bars, use_container_width=True)
+                                
+                                # Interactive Metrics Explorer
+                                st.subheader("Interactive Metrics Explorer")
+                                
+                                # Create selection for metrics
+                                selected_metrics = st.multiselect(
+                                    "Select metrics to compare",
+                                    ['Content Score', 'Skills Score', 'Keyword Score', 'Format Score', 'Readability Score'],
+                                    default=['Content Score', 'Skills Score']
+                                )
+                                
+                                if selected_metrics:
+                                    # Prepare data for selected metrics
+                                    metric_values = {
+                                        'Content Score': scores.get('content_score', 0),
+                                        'Skills Score': scores.get('skills_score', 0),
+                                        'Keyword Score': scores.get('keyword_score', 0),
+                                        'Format Score': scores.get('format_score', 0),
+                                        'Readability Score': scores.get('readability_score', 0)
+                                    }
+                                    
+                                    selected_data = {
+                                        metric: metric_values[metric]
+                                        for metric in selected_metrics
+                                    }
+                                    
+                                    # Create comparison chart
+                                    fig_compare = go.Figure()
+                                    for metric, value in selected_data.items():
+                                        fig_compare.add_trace(go.Bar(
+                                            name=metric,
+                                            x=[metric],
+                                            y=[value],
+                                            text=[f"{value}%"],
+                                            textposition='auto',
+                                        ))
+                                    
+                                    fig_compare.update_layout(
+                                        title="Metrics Comparison",
+                                        yaxis_title="Score (%)",
+                                        yaxis_range=[0, 100],
+                                        showlegend=False
+                                    )
+                                    
+                                    st.plotly_chart(fig_compare, use_container_width=True)
+                    
                     except Exception as e:
                         st.error(f"An error occurred during AI analysis: {str(e)}")
                         st.info("Please check your API key or try again later.")
