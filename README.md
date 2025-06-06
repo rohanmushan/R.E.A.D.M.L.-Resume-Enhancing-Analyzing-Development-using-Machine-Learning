@@ -193,7 +193,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 👥 Authors
 
-- **Rohan Mushan** - *Initial work* - [YourGitHub](http://github.com/rohanmushan)
+- **Rohan Mushan** - *Initial work* - [MyGithub](http://github.com/rohanmushan)
 
 ## 🙏 Acknowledgments
 
