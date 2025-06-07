@@ -50,7 +50,32 @@ def initialize_session_state():
     if 'resume_parser' not in st.session_state:
         st.session_state.resume_parser = ResumeParser()
     if 'parsed_resume' not in st.session_state:
-        st.session_state.parsed_resume = None
+        st.session_state.parsed_resume = {
+            'scores': {
+                'total_score': 0,
+                'content_score': 0,
+                'skills_score': 0,
+                'keyword_score': 0,
+                'format_score': 0,
+                'readability_score': 0,
+                'detected_skills': {
+                    'programming_languages': [],
+                    'frameworks_libraries': [],
+                    'soft_skills': [],
+                    'tools_technologies': []
+                }
+            },
+            'sections': {},
+            'skills': [],
+            'frameworks': [],
+            'other_skills': []
+        }
+    if 'ai_analysis' not in st.session_state:
+        st.session_state.ai_analysis = {
+            'profile_analysis': '',
+            'skills_analysis': '',
+            'ats_analysis': ''
+        }
 
 def save_form_data(form_data):
     """Save form data to session state"""
@@ -1085,6 +1110,36 @@ def main():
                             # Store in session state
                             st.session_state.resume_data = resume_data
                             st.session_state.show_preview = True  # Flag to show preview section
+
+                            # Calculate scores and perform analysis
+                            try:
+                                # Calculate ATS score
+                                st.session_state.parsed_resume['scores'] = st.session_state.resume_parser.calculate_ats_score(
+                                    str(resume_data),  # Convert resume data to string for analysis
+                                    resume_data.get('profile_summary', {}).get('target_role', '')  # Use target role as job description
+                                )
+                                
+                                # Get AI analysis
+                                analysis = analyze_resume_content(st.session_state.gemini_model, resume_data)
+                                ats_analysis = get_ats_optimization(st.session_state.gemini_model, resume_data)
+                                
+                                # Store analysis in session state
+                                st.session_state.ai_analysis = {
+                                    'profile_analysis': analysis['profile_analysis'],
+                                    'skills_analysis': analysis['skills_analysis'],
+                                    'ats_analysis': ats_analysis['ats_analysis']
+                                }
+                                
+                                # Update detected skills
+                                st.session_state.parsed_resume['scores']['detected_skills'] = {
+                                    'programming_languages': resume_data.get('skills', {}).get('programming', []),
+                                    'frameworks_libraries': resume_data.get('skills', {}).get('frameworks', []),
+                                    'soft_skills': resume_data.get('skills', {}).get('soft_skills', []),
+                                    'tools_technologies': resume_data.get('skills', {}).get('tools', [])
+                                }
+                            except Exception as e:
+                                st.error(f"An error occurred during analysis: {str(e)}")
+                                st.info("Please check your input data and try again.")
 
     with tab2:
         # New resume upload and analysis section
