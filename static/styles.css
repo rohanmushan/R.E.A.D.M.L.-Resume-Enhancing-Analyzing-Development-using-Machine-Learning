@@ -520,3 +520,27 @@ div[data-testid="stExpander"] {
 .stTabs {
   padding: 0 !important;
 }
+
+/* ATS Score Container */
+.ats-score-container {
+  text-align: center;
+  padding: 20px;
+  background: linear-gradient(135deg, 
+    rgba(82, 238, 255, 0.1),
+    rgba(82, 238, 255, 0.2),
+    rgba(82, 238, 255, 0.1)
+  );
+  border-radius: 10px;
+  margin-bottom: 20px;
+  position: relative;
+  overflow: hidden;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(82, 238, 255, 0.2);
+}
+
+.ats-score-container h2 {
+  margin: 0;
+  position: relative;
+  z-index: 1;
+  color: var(--text-color);
+}

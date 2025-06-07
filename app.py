@@ -247,8 +247,8 @@ def render_resume_upload_section():
                         # Overall ATS Score at the top
                         total_score = parsed_data['scores']['total_score']
                         st.markdown(f"""
-                        <div style='text-align: center; padding: 20px; background-color: #f0f2f6; border-radius: 10px; margin-bottom: 20px;'>
-                            <h2 style='margin: 0;'>Overall ATS Score: {total_score}%</h2>
+                        <div class='ats-score-container'>
+                            <h2>Overall ATS Score: {total_score}%</h2>
                         </div>
                         """, unsafe_allow_html=True)
                         
@@ -1156,8 +1156,8 @@ def main():
                                 # Overall ATS Score at the top
                                 total_score = st.session_state.parsed_resume['scores']['total_score']
                                 st.markdown(f"""
-                                <div style='text-align: center; padding: 20px; background-color: #f0f2f6; border-radius: 10px; margin-bottom: 20px;'>
-                                    <h2 style='margin: 0;'>Overall ATS Score: {total_score}%</h2>
+                                <div class='ats-score-container'>
+                                    <h2>Overall ATS Score: {total_score}%</h2>
                                 </div>
                                 """, unsafe_allow_html=True)
                                 
