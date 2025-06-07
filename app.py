@@ -244,57 +244,63 @@ def render_resume_upload_section():
                     with tab1:
                         st.subheader("ATS Compatibility Score")
                         
-                        # Display scores in columns with improved styling
-                        col1, col2, col3 = st.columns(3)
-                        
-                        # Calculate total score percentage
+                        # Overall ATS Score at the top
                         total_score = parsed_data['scores']['total_score']
+                        st.markdown(f"""
+                        <div style='text-align: center; padding: 20px; background-color: #f0f2f6; border-radius: 10px; margin-bottom: 20px;'>
+                            <h2 style='margin: 0;'>Overall ATS Score: {total_score}%</h2>
+                        </div>
+                        """, unsafe_allow_html=True)
                         
-                        with col1:
-                            st.metric(
-                                "Overall ATS Score", 
-                                f"{total_score}%",
-                                delta="Target: 85%+" if total_score < 85 else None,
-                                delta_color="inverse"
-                            )
-                        
-                        with col2:
-                            st.metric(
-                                "Keyword Match", 
-                                f"{parsed_data['scores']['keyword_score']}%",
-                                delta="Target: 80%+" if parsed_data['scores']['keyword_score'] < 80 else None,
-                                delta_color="inverse"
-                            )
-                        
-                        with col3:
-                            st.metric(
-                                "Format Score", 
-                                f"{parsed_data['scores']['format_score']}%",
-                                delta="Target: 90%+" if parsed_data['scores']['format_score'] < 90 else None,
-                                delta_color="inverse"
-                            )
-                        
-                        # Display score breakdown with improved visualization
-                        st.subheader("Detailed Score Breakdown")
-                        scores_df = pd.DataFrame({
-                            'Category': [
+                        # Create a DataFrame for the score breakdown
+                        score_breakdown = pd.DataFrame({
+                            'Component': [
+                                'Format & Structure',
                                 'Content Quality',
                                 'Skills Coverage',
-                                'Keyword Optimization',
-                                'Format & Structure',
+                                'Keyword Match',
                                 'Readability'
                             ],
-                            'Score': [
+                            'Maximum Points': [15, 25, 25, 25, 10],
+                            'Your Score': [
+                                parsed_data['scores']['format_score'],
                                 parsed_data['scores']['content_score'],
                                 parsed_data['scores']['skills_score'],
                                 parsed_data['scores']['keyword_score'],
-                                parsed_data['scores']['format_score'],
                                 parsed_data['scores']['readability_score']
                             ]
                         })
                         
-                        # Display as bar chart
-                        st.bar_chart(scores_df.set_index('Category'))
+                        # Display the score breakdown as a styled table
+                        st.markdown("### Score Breakdown")
+                        st.dataframe(
+                            score_breakdown.style
+                            .set_properties(**{'text-align': 'left'})
+                            .bar(subset=['Your Score'], color='#0068c9', vmin=0, vmax=25)
+                            .format({'Maximum Points': '{:.0f}', 'Your Score': '{:.1f}'}),
+                            use_container_width=True
+                        )
+                        
+                        # Display individual score components with progress bars
+                        st.markdown("### Detailed Component Analysis")
+                        for _, row in score_breakdown.iterrows():
+                            col1, col2 = st.columns([3, 1])
+                            with col1:
+                                progress = (row['Your Score'] / row['Maximum Points']) * 100
+                                st.markdown(f"**{row['Component']}**")
+                                st.progress(progress / 100)
+                            with col2:
+                                st.markdown(f"**{row['Your Score']:.1f}/{row['Maximum Points']:.0f}**")
+                            st.markdown("---")
+                        
+                        # Add score interpretation
+                        st.markdown("### Score Interpretation")
+                        if total_score >= 85:
+                            st.success("Your resume is well-optimized for ATS systems! 🌟")
+                        elif total_score >= 70:
+                            st.warning("Your resume meets basic ATS requirements but has room for improvement. 📈")
+                        else:
+                            st.error("Your resume needs significant optimization for better ATS performance. 🎯")
                     
                     with tab2:
                         st.subheader("Profile Analysis")
@@ -1147,42 +1153,63 @@ def main():
                             with tab1:
                                 st.subheader("ATS Compatibility Score")
                                 
-                                # Display scores in columns with improved styling
-                                col1, col2, col3 = st.columns(3)
-                                
-                                # Calculate total score percentage
+                                # Overall ATS Score at the top
                                 total_score = st.session_state.parsed_resume['scores']['total_score']
+                                st.markdown(f"""
+                                <div style='text-align: center; padding: 20px; background-color: #f0f2f6; border-radius: 10px; margin-bottom: 20px;'>
+                                    <h2 style='margin: 0;'>Overall ATS Score: {total_score}%</h2>
+                                </div>
+                                """, unsafe_allow_html=True)
                                 
-                                with col1:
-                                    st.metric("Overall ATS Score", f"{total_score}%")
-                                
-                                with col2:
-                                    st.metric("Keyword Match", f"{st.session_state.parsed_resume['scores']['keyword_score']}%")
-                                
-                                with col3:
-                                    st.metric("Format Score", f"{st.session_state.parsed_resume['scores']['format_score']}%")
-                                
-                                # Display score breakdown with improved visualization
-                                st.subheader("Detailed Score Breakdown")
-                                scores_df = pd.DataFrame({
-                                    'Category': [
+                                # Create a DataFrame for the score breakdown
+                                score_breakdown = pd.DataFrame({
+                                    'Component': [
+                                        'Format & Structure',
                                         'Content Quality',
                                         'Skills Coverage',
-                                        'Keyword Optimization',
-                                        'Format & Structure',
+                                        'Keyword Match',
                                         'Readability'
                                     ],
-                                    'Score': [
+                                    'Maximum Points': [15, 25, 25, 25, 10],
+                                    'Your Score': [
+                                        st.session_state.parsed_resume['scores']['format_score'],
                                         st.session_state.parsed_resume['scores']['content_score'],
                                         st.session_state.parsed_resume['scores']['skills_score'],
                                         st.session_state.parsed_resume['scores']['keyword_score'],
-                                        st.session_state.parsed_resume['scores']['format_score'],
                                         st.session_state.parsed_resume['scores']['readability_score']
                                     ]
                                 })
                                 
-                                # Display as bar chart
-                                st.bar_chart(scores_df.set_index('Category'))
+                                # Display the score breakdown as a styled table
+                                st.markdown("### Score Breakdown")
+                                st.dataframe(
+                                    score_breakdown.style
+                                    .set_properties(**{'text-align': 'left'})
+                                    .bar(subset=['Your Score'], color='#0068c9', vmin=0, vmax=25)
+                                    .format({'Maximum Points': '{:.0f}', 'Your Score': '{:.1f}'}),
+                                    use_container_width=True
+                                )
+                                
+                                # Display individual score components with progress bars
+                                st.markdown("### Detailed Component Analysis")
+                                for _, row in score_breakdown.iterrows():
+                                    col1, col2 = st.columns([3, 1])
+                                    with col1:
+                                        progress = (row['Your Score'] / row['Maximum Points']) * 100
+                                        st.markdown(f"**{row['Component']}**")
+                                        st.progress(progress / 100)
+                                    with col2:
+                                        st.markdown(f"**{row['Your Score']:.1f}/{row['Maximum Points']:.0f}**")
+                                    st.markdown("---")
+                                
+                                # Add score interpretation
+                                st.markdown("### Score Interpretation")
+                                if total_score >= 85:
+                                    st.success("Your resume is well-optimized for ATS systems! 🌟")
+                                elif total_score >= 70:
+                                    st.warning("Your resume meets basic ATS requirements but has room for improvement. 📈")
+                                else:
+                                    st.error("Your resume needs significant optimization for better ATS performance. 🎯")
                             
                             with tab2:
                                 st.subheader("Profile Analysis")

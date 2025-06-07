@@ -3,7 +3,7 @@ example@gmail.com
 4561237891
 https://www.google.com/
 https://www.google.com/
-    Dr. Babasaheb Ambedkar Technological University, Lonere
+Dr. Babasaheb Ambedkar Technological University, Lonere
 Bachelor of Technology in Artificail Intelligence in Data Science
 
 Data analyst
@@ -19,7 +19,6 @@ DSA, Pipelining, Modeling, Data Wrangling/Cleaning, regression analysis, classif
 Git, github, Hadoop, Spark, VS code. 
 
 1. Portfolio
-Jan 2022 - May 2022
 Jan 2022 - May 2022
 i have made my Portfolio to interact with more people and for the more reach, i have made my Portfolio to interact with more people and for the more reach, i have made my Portfolio to interact with more people and for the more reach.
 
