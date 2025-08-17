@@ -204,7 +204,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📧 Contact & Support
 
-- Project Maintainer: [rohanmushan08@gmail.com](mailto:rohanmushan08@gmail.com)
+- Project Maintainer: [rohanmushan.dev@gmail.com](mailto:rohanmushan.dev@gmail.com)
 - Project Link: [git@github.com:rohanmushan/R.E.A.D.M.L.-Resume-Enhancing-Analysing-Development-using-Machine-Learning-.git](https://github.com/rohanmushan/R.E.A.D.M.L.)
 - Report Issues: [Issue Tracker](https://github.com/rohanmushan/R.E.A.D.M.L./issues)
 - Documentation: [Wiki](https://github.com/rohanmushan/R.E.A.D.M.L./wiki)
