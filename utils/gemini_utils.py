@@ -1,27 +1,47 @@
 import google.generativeai as genai
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Any
 import streamlit as st
 import time
 import json
+from datetime import date, datetime
+
+# gemini-2.5-flash is the model
+PREFERRED_GEMINI_MODELS = (
+    "gemini-2.5-flash",
+    "gemini-3.5-flash",
+    "gemini-flash-latest",
+)
+
+
+def _create_verified_model(model_name: str):
+    """Create a GenerativeModel and verify it responds."""
+    model = genai.GenerativeModel(model_name)
+    response = model.generate_content("Reply with OK.")
+    if response and response.text:
+        return model
+    raise RuntimeError(f"Model {model_name} returned an empty response")
+
 
 def initialize_gemini(api_key: str):
     """Initialize Gemini API with the provided key"""
     try:
-        # Configure the API
         genai.configure(api_key=api_key)
-        
-        # Use gemini-1.5-flash model
-        model = genai.GenerativeModel('gemini-1.5-flash')
-        
-        # Test the model
-        response = model.generate_content("Test")
-        if response:
-            return model
-        
+
+        last_error = None
+        for model_name in PREFERRED_GEMINI_MODELS:
+            try:
+                return _create_verified_model(model_name)
+            except Exception as e:
+                last_error = e
+                continue
+
+        if last_error:
+            raise last_error
+
     except Exception as e:
         if "429" in str(e):  # Rate limit error
             st.error("Rate limit exceeded. Please wait a few minutes before trying again.")
-            st.info("""z
+            st.info("""
             To avoid rate limits:
             1. Wait a few minutes between requests
             2. Keep your prompts concise
@@ -34,8 +54,60 @@ def initialize_gemini(api_key: str):
             1. Your API key is valid
             2. You have internet connection
             3. The API service is available in your region
+            4. Your project has access to a current Gemini model (e.g. gemini-2.5-flash)
             """)
         return None
+
+def _json_safe(value: Any) -> Any:
+    """Convert values to JSON-serializable forms."""
+    if isinstance(value, datetime):
+        return value.strftime("%B %Y") if value else ""
+    if isinstance(value, date):
+        return value.strftime("%B %Y")
+    if isinstance(value, dict):
+        return {key: _json_safe(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple, set)):
+        return [_json_safe(item) for item in value]
+    return value
+
+
+def _build_role_context(resume_data: Dict) -> str:
+    """Build structured resume context for prompts."""
+    skills = resume_data.get('skills', {})
+    projects = resume_data.get('projects', [])
+    payload = {
+        'target_role': resume_data.get('profile_summary', {}).get('target_role', 'Not specified'),
+        'summary': resume_data.get('profile_summary', {}).get('summary', ''),
+        'programming_skills': skills.get('programming', []),
+        'frameworks': skills.get('frameworks', []),
+        'tools': skills.get('tools', []),
+        'other_skills': skills.get('other', []),
+        'soft_skills': skills.get('soft_skills', []),
+        'education': resume_data.get('education', {}),
+        'projects': [
+            {
+                'title': p.get('title', ''),
+                'tools': p.get('tools', ''),
+                'description': p.get('description', ''),
+            }
+            for p in projects
+        ],
+    }
+    return json.dumps(_json_safe(payload), indent=2)
+
+
+def _role_focused_instructions(target_role: str) -> str:
+    return f"""
+STRICT EVALUATION RULES:
+- Analyze ONLY for the target role: "{target_role}".
+- Compare the resume against the expected tech stack, tools, and competencies for this role.
+- If programming languages or core role skills are missing, state that clearly and score harshly.
+- Do NOT give optimistic feedback when content is missing or generic.
+- Do NOT assume skills that are not explicitly present in the resume data.
+- Use professional tone with sections and bullet points using "-" only.
+- Keep each section concise, ordered by priority (most critical gaps first).
+"""
+
 
 def analyze_resume_content(model, resume_data: Dict) -> Dict:
     """Analyze resume content using Gemini API with rate limit handling"""
@@ -44,121 +116,74 @@ def analyze_resume_content(model, resume_data: Dict) -> Dict:
             'profile_analysis': "AI analysis unavailable. Please check API configuration.",
             'skills_analysis': "AI analysis unavailable. Please check API configuration."
         }
-    
+
+    target_role = resume_data.get('profile_summary', {}).get('target_role', 'Not specified')
+    context = _build_role_context(resume_data)
+
     try:
-        # Add delay between requests to avoid rate limits
         time.sleep(2)
-        
-        # Enhanced profile analysis prompt with more detailed instructions
+
         profile_prompt = f"""
-        As an expert resume reviewer and hiring manager with extensive experience in {resume_data['profile_summary']['target_role']} roles, 
-        perform a comprehensive analysis of this professional profile:
+You are a senior hiring manager evaluating a resume ONLY for: {target_role}.
 
-        TARGET ROLE: {resume_data['profile_summary']['target_role']}
-        CURRENT SUMMARY: {resume_data['profile_summary']['summary']}
-        SKILLS: {', '.join(resume_data['skills']['programming'] + resume_data['skills'].get('frameworks', []))}
-        
-        Provide detailed, actionable feedback in the following categories:
+RESUME DATA:
+{context}
 
-        1. Profile Strengths (25%):
-        • Identify strong points that align with the target role
-        • Highlight effective achievements and metrics
-        • Note well-presented technical capabilities
-        • Recognize unique selling points
-        • Evaluate industry-specific expertise
+{_role_focused_instructions(target_role)}
 
-        2. Areas for Improvement (25%):
-        • Point out specific content gaps
-        • Identify missing key qualifications
-        • Suggest concrete additions
-        • Note unclear or weak descriptions
-        • Recommend better ways to present experience
+Provide analysis in EXACTLY these sections (use "-" for every bullet):
 
-        3. Industry Alignment (20%):
-        • Compare with current industry standards
-        • List missing critical keywords
-        • Suggest relevant certifications
-        • Recommend emerging technical skills
-        • Note competitive differentiators
+**Role Alignment Summary**
+- State how well the profile matches {target_role}
+- Mention missing fundamentals if any
 
-        4. Content Enhancement (15%):
-        • Provide specific metrics to add
-        • Suggest impactful action verbs
-        • Recommend achievement formats
-        • List quantifiable examples
-        • Propose better ways to describe projects
+**Profile Strengths**
+- List only strengths backed by resume content
 
-        5. Optimization Tips (15%):
-        • Suggest structural improvements
-        • Recommend format changes
-        • Propose keyword placements
-        • Advise on content organization
-        • Note best practices for the role
+**Critical Gaps**
+- List missing qualifications, skills, or experience for {target_role}
 
-        Format your response with clear bullet points and complete sentences.
-        Focus on actionable, specific advice that will improve the resume's effectiveness.
-        Prioritize recommendations based on their potential impact.
-        """
-        
+**Content Improvements**
+- Specific rewrites or additions needed
+
+**Recommended Keywords for {target_role}**
+- Role-specific keywords to add (only those relevant to this role)
+"""
+
         profile_response = model.generate_content(profile_prompt)
-        
-        # Add delay between requests
         time.sleep(2)
-        
-        # Enhanced skills analysis prompt
+
         skills_prompt = f"""
-        As a senior technical recruiter specializing in {resume_data['profile_summary']['target_role']} positions,
-        analyze these technical competencies:
+You are a technical recruiter specializing in {target_role}.
 
-        ROLE: {resume_data['profile_summary']['target_role']}
-        TECHNICAL SKILLS: {', '.join(resume_data['skills']['programming'])}
-        FRAMEWORKS: {', '.join(resume_data['skills'].get('frameworks', []))}
-        OTHER SKILLS: {', '.join(resume_data['skills'].get('other', []))}
-        
-        Provide a detailed analysis in these areas:
+RESUME DATA:
+{context}
 
-        1. Technical Skill Assessment (30%):
-        • Evaluate current technical stack
-        • Rate skill relevance for the role
-        • Identify critical missing skills
-        • Suggest priority additions
-        • Compare with industry standards
+{_role_focused_instructions(target_role)}
 
-        2. Framework & Tool Analysis (25%):
-        • Assess framework proficiency needs
-        • Recommend complementary tools
-        • Suggest version-specific skills
-        • Note emerging technologies
-        • Identify obsolete technologies
+Provide analysis in EXACTLY these sections (use "-" for every bullet):
 
-        3. Industry Requirements (20%):
-        • List must-have skills for 2024
-        • Identify emerging technologies
-        • Suggest certification paths
-        • Note competitive advantages
-        • Compare with market demands
+**Expected Tech Stack for {target_role}**
+- List standard languages, frameworks, and tools for this role
 
-        4. Skill Development Plan (15%):
-        • Prioritize learning objectives
-        • Recommend learning resources
-        • Suggest timeline for upskilling
-        • List quick wins
-        • Propose long-term goals
+**Skills Found in Resume**
+- Only skills explicitly present in the resume data
 
-        5. Market Positioning (10%):
-        • Analyze unique skill combinations
-        • Suggest specialization paths
-        • Identify high-demand niches
-        • Note salary-boosting skills
-        • Recommend portfolio projects
+**Missing Core Skills**
+- Critical skills absent from the resume for {target_role}
 
-        Format your response with clear bullet points and complete sentences.
-        Focus on concrete, actionable recommendations.
-        Consider both immediate needs and future career growth.
-        """
-        
+**Skills Match Rating**
+- Rate match as: Poor / Fair / Good / Strong — with one-line justification
+
+**Priority Upskilling Plan**
+- Top 5 skills to add, ordered by impact for {target_role}
+
+**Project & Experience Gaps**
+- How projects/experience fail to demonstrate the required stack
+"""
+
         skills_response = model.generate_content(skills_prompt)
-        
+
         return {
             'profile_analysis': profile_response.text if profile_response else "Analysis failed",
             'skills_analysis': skills_response.text if skills_response else "Analysis failed"
@@ -180,73 +205,49 @@ def get_ats_optimization(model, resume_data: Dict) -> Dict:
     """Get ATS optimization suggestions using Gemini API"""
     if not model:
         return {'ats_analysis': "ATS analysis unavailable. Please check API configuration."}
-    
+
+    target_role = resume_data.get('profile_summary', {}).get('target_role', 'Not specified')
+    context = _build_role_context(resume_data)
+
     try:
-        # Add delay before request
         time.sleep(2)
-        
-        # Enhanced ATS analysis prompt with comprehensive scoring criteria
+
         prompt = f"""
-        As an expert ATS (Applicant Tracking System) analyst, perform a detailed evaluation of this resume for the role of {resume_data['profile_summary']['target_role']}.
+You are an ATS analyst. Evaluate this resume ONLY for: {target_role}.
 
-        Resume Content:
-        - Target Role: {resume_data['profile_summary']['target_role']}
-        - Professional Summary: {resume_data['profile_summary']['summary']}
-        - Technical Skills: {', '.join(resume_data['skills']['programming'])}
-        - Frameworks/Libraries: {', '.join(resume_data['skills'].get('frameworks', []))}
-        - Other Skills: {', '.join(resume_data['skills'].get('other', []))}
-        - Projects: {json.dumps([p['title'] for p in resume_data['projects']])}
-        - Education: {resume_data['education']['degree']} from {resume_data['education']['university']}
+RESUME DATA:
+{context}
 
-        Provide a comprehensive ATS analysis with the following structure:
+{_role_focused_instructions(target_role)}
 
-        1. ATS Compatibility Score (30%):
-        • Overall Score: [0-100]
-        • Keyword Relevance: [0-30]
-        • Format Compliance: [0-25]
-        • Skills Match: [0-25]
-        • Education Match: [0-20]
-        • Detailed score breakdown
-        • Industry benchmark comparison
+SCORING RULES:
+- Incomplete resumes with no programming languages (for technical roles) must receive Poor ATS readiness.
+- Do not inflate scores for sparse content.
+- Base every recommendation on gaps visible in the resume data.
 
-        2. Keyword Optimization (25%):
-        • Critical keywords found
-        • Missing essential keywords
-        • Keyword placement analysis
-        • Frequency optimization
-        • Context relevance
-        • Industry-specific terms
+Provide analysis in EXACTLY these sections (use "-" for every bullet):
 
-        3. Format & Structure (20%):
-        • Section organization
-        • Content hierarchy
-        • Heading consistency
-        • Bullet point usage
-        • White space utilization
-        • File format compliance
+**ATS Readiness Verdict**
+- One of: Poor / Fair / Good / Excellent — with brief justification for {target_role}
 
-        4. Content Enhancement (15%):
-        • Action verb usage
-        • Metrics and achievements
-        • Technical terminology
-        • Role-specific language
-        • Experience description
-        • Project highlights
+**Keyword Analysis**
+- Keywords present that match {target_role}
+- Missing essential keywords for this role
 
-        5. ATS-Specific Recommendations (10%):
-        • File format guidelines
-        • Parsing optimization
-        • Layout improvements
-        • Font considerations
-        • Special character usage
-        • Mobile compatibility
+**Format & Structure**
+- Section organization issues
+- ATS parsing risks
 
-        Format your response with clear sections and bullet points.
-        Provide specific, actionable recommendations.
-        Include both quick fixes and strategic improvements.
-        Consider multiple ATS platforms' requirements.
-        """
-        
+**Content Quality**
+- Action verbs, metrics, and achievement clarity
+
+**Role-Specific Recommendations**
+- Top 5 changes to improve ATS score for {target_role}
+
+**Quick Wins**
+- Changes that can be made immediately
+"""
+
         response = model.generate_content(prompt)
         return {
             'ats_analysis': response.text if response else "ATS analysis failed"
