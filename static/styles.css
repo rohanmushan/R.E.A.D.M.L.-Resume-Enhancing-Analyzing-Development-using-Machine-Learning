@@ -544,3 +544,78 @@ div[data-testid="stExpander"] {
   z-index: 1;
   color: var(--text-color);
 }
+
+.ats-score-label {
+  margin: 0 0 0.25rem;
+  font-size: 1rem;
+  opacity: 0.85;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.ats-score-value {
+  margin: 0.25rem 0;
+  font-size: 2.75rem;
+}
+
+.ats-score-role {
+  margin: 0.5rem 0 0;
+  font-size: 1rem;
+  opacity: 0.9;
+}
+
+.score-breakdown-wrapper {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  margin: 1rem auto 2rem;
+}
+
+.score-breakdown-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.score-breakdown-card {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(82, 238, 255, 0.2);
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+  text-align: center;
+}
+
+.score-breakdown-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.score-breakdown-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--primary-color);
+  margin-bottom: 0.75rem;
+}
+
+.score-breakdown-value span {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.score-breakdown-bar {
+  height: 8px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.score-breakdown-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary-color), var(--primary-hover));
+  border-radius: 999px;
+}
