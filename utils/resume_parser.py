@@ -255,18 +255,66 @@ class ResumeParser:
                 
         return skills
 
-    def calculate_ats_score(self, text: str, job_description: str = None) -> Dict[str, Any]:
-        """Calculate enhanced ATS compatibility score"""
+    def _skill_in_text(self, skill: str, text: str) -> bool:
+        """Match skills using word boundaries to reduce false positives."""
+        pattern = r'\b' + re.escape(skill.lower()) + r'\b'
+        return bool(re.search(pattern, text.lower()))
+
+    def _is_technical_role(self, target_role: str) -> bool:
+        role = (target_role or "").lower()
+        tech_keywords = (
+            'developer', 'engineer', 'programmer', 'software', 'data scientist',
+            'data analyst', 'devops', 'sre', 'full stack', 'frontend', 'backend',
+            'machine learning', 'ml', 'ai', 'cloud', 'architect', 'qa', 'test',
+            'cyber', 'web', 'mobile', 'android', 'ios', 'database', 'dba'
+        )
+        return any(keyword in role for keyword in tech_keywords)
+
+    def _expected_skills_for_role(self, target_role: str) -> set:
+        """Return baseline skills expected for a target role."""
+        role = (target_role or "").lower()
+        expected = set()
+
+        if any(k in role for k in ('python', 'data', 'ml', 'machine learning', 'ai')):
+            expected.update({'python', 'sql', 'pandas', 'numpy'})
+        if any(k in role for k in ('java', 'spring', 'backend')):
+            expected.update({'java', 'sql', 'spring'})
+        if any(k in role for k in ('javascript', 'frontend', 'react', 'web', 'full stack')):
+            expected.update({'javascript', 'html5', 'css3', 'react'})
+        if any(k in role for k in ('devops', 'cloud', 'sre', 'infrastructure')):
+            expected.update({'docker', 'kubernetes', 'aws', 'git'})
+        if any(k in role for k in ('android', 'mobile')):
+            expected.update({'kotlin', 'java', 'android'})
+        if any(k in role for k in ('software', 'developer', 'engineer')) and not expected:
+            expected.update({'python', 'java', 'javascript', 'git'})
+
+        return expected
+
+    def calculate_ats_score(
+        self,
+        text: str,
+        job_description: str = None,
+        target_role: str = None,
+    ) -> Dict[str, Any]:
+        """Calculate ATS compatibility score with strict role-focused evaluation."""
         doc = self.nlp(text.lower())
         sections = self.extract_sections(text)
-        
-        # Extract skills with categories
+        target_role = target_role or sections.get('role') or ''
+        is_technical = self._is_technical_role(target_role)
+        reference_text = job_description or target_role or ''
+
         skills_by_category = {
-            category: {skill for skill in skills 
-                      if skill in text.lower()}
+            category: {
+                skill for skill in skills if self._skill_in_text(skill, text)
+            }
             for category, skills in self.SKILLS_DB.items()
         }
-        
+
+        programming_skills = skills_by_category.get('programming_languages', set())
+        framework_skills = skills_by_category.get('frameworks_libraries', set())
+        total_skills = sum(len(skills) for skills in skills_by_category.values())
+        word_count = len(text.split())
+
         scores = {
             'format_score': 0,
             'content_score': 0,
@@ -277,180 +325,224 @@ class ResumeParser:
             'total_score': 0,
             'feedback': [],
             'detected_skills': skills_by_category,
-            'improvement_priority': []
+            'improvement_priority': [],
+            'missing_role_skills': [],
+            'target_role': target_role,
         }
-        
-        # Format Score (15 points)
-        format_points = 15
-        
-        # Check section organization
-        if len(sections) < 4:
-            format_points -= 5
-            scores['feedback'].append("Missing key sections - add more sections to your resume")
+
+        # Format Score (15 points max)
+        format_points = 0
+        if len(sections) >= 4:
+            format_points += 5
+        else:
+            scores['feedback'].append("Add standard sections: Summary, Skills, Experience/Projects, and Education")
             scores['improvement_priority'].append(("Add Missing Sections", "High"))
-        
-        # Check content length and distribution
-        section_lengths = {section: len(content.split()) for section, content in sections.items()}
-        if sum(section_lengths.values()) < 300:
-            format_points -= 3
-            scores['feedback'].append("Resume content is too brief - aim for 300-700 words")
+
+        section_headers = sum(
+            1 for line in text.split('\n') if line.strip().lower() in self.SECTIONS
+        )
+        if section_headers >= 4:
+            format_points += 4
+        elif section_headers >= 2:
+            format_points += 2
+            scores['feedback'].append("Use clear section headers to improve ATS parsing")
+        else:
+            scores['feedback'].append("Missing clear section headers")
+
+        if 300 <= word_count <= 900:
+            format_points += 6
+        elif 150 <= word_count < 300:
+            format_points += 3
+            scores['feedback'].append("Resume content is brief — expand with role-relevant achievements")
             scores['improvement_priority'].append(("Expand Content", "High"))
-        elif sum(section_lengths.values()) > 1000:
-            format_points -= 2
-            scores['feedback'].append("Resume might be too verbose - consider condensing")
-            scores['improvement_priority'].append(("Condense Content", "Medium"))
-        
-        # Check section headers formatting
-        section_headers = sum(1 for line in text.split('\n') 
-                            if line.strip().lower() in self.SECTIONS)
-        if section_headers < 4:
-            format_points -= 3
-            scores['feedback'].append("Use clear section headers to organize your resume")
-            scores['improvement_priority'].append(("Improve Section Headers", "High"))
-        
-        scores['format_score'] = max(0, format_points)
-        
-        # Content Score (25 points)
-        content_points = 25
-        
-        # Check for action verbs and metrics
-        action_verbs = ['developed', 'implemented', 'created', 'managed', 'led',
-                       'designed', 'improved', 'increased', 'reduced', 'achieved',
-                       'launched', 'optimized', 'coordinated', 'streamlined', 
-                       'automated', 'architected', 'mentored', 'spearheaded']
+        elif word_count < 150:
+            scores['feedback'].append("Resume is too sparse for a competitive ATS score")
+            scores['improvement_priority'].append(("Add Substantive Content", "Critical"))
+        else:
+            format_points += 4
+            scores['feedback'].append("Resume may be too long — keep it concise and relevant")
+
+        scores['format_score'] = min(15, format_points)
+
+        # Content Score (25 points max)
+        content_points = 0
+        action_verbs = {
+            'developed', 'implemented', 'created', 'managed', 'led', 'designed',
+            'improved', 'increased', 'reduced', 'achieved', 'launched', 'optimized',
+            'coordinated', 'streamlined', 'automated', 'architected', 'mentored', 'spearheaded'
+        }
         verb_count = sum(1 for token in doc if token.text.lower() in action_verbs)
-        
         metrics_patterns = [
             r'\d+%', r'\$\d+', r'\d+ years?', r'\d+\+',
             r'\d+x', r'\d+M', r'\d+K', r'\d+ users?',
             r'\d+ team members?', r'\d+ projects?'
         ]
-        metrics_count = sum(1 for pattern in metrics_patterns 
-                          if re.search(pattern, text, re.IGNORECASE))
-        
-        if verb_count < 5:
-            content_points -= 8
-            scores['feedback'].append("Use more action verbs to describe your experiences")
+        metrics_count = sum(1 for pattern in metrics_patterns if re.search(pattern, text, re.IGNORECASE))
+        bullet_points = sum(
+            1 for line in text.split('\n') if line.strip().startswith(('•', '-', '∙', '*'))
+        )
+
+        if verb_count >= 8:
+            content_points += 8
+        elif verb_count >= 4:
+            content_points += 5
+        elif verb_count >= 1:
+            content_points += 2
+        else:
+            scores['feedback'].append("Use strong action verbs to describe achievements")
             scores['improvement_priority'].append(("Add Action Verbs", "High"))
-        if metrics_count < 3:
-            content_points -= 7
-            scores['feedback'].append("Add more quantifiable achievements and metrics")
+
+        if metrics_count >= 4:
+            content_points += 9
+        elif metrics_count >= 2:
+            content_points += 5
+        elif metrics_count >= 1:
+            content_points += 2
+        else:
+            scores['feedback'].append("Add quantifiable metrics (%, users, revenue, team size)")
             scores['improvement_priority'].append(("Add Metrics", "High"))
-        
-        # Check for bullet point formatting
-        bullet_points = sum(1 for line in text.split('\n') 
-                          if line.strip().startswith(('•', '-', '∙', '*')))
-        if bullet_points < 10:
-            content_points -= 5
-            scores['feedback'].append("Use more bullet points to organize achievements")
+
+        if bullet_points >= 8:
+            content_points += 8
+        elif bullet_points >= 4:
+            content_points += 4
+        elif bullet_points >= 1:
+            content_points += 2
+        else:
+            scores['feedback'].append("Organize achievements using bullet points")
             scores['improvement_priority'].append(("Add Bullet Points", "Medium"))
-        
-        scores['content_score'] = max(0, content_points)
-        
-        # Skills Score (25 points)
-        skills_points = 25
-        total_skills = sum(len(skills) for skills in skills_by_category.values())
-        
-        # Calculate skill distribution score
-        skill_distribution = {
-            category: len(skills) for category, skills in skills_by_category.items()
-        }
-        
-        if total_skills < 8:
-            skills_points -= 15
-            scores['feedback'].append("Add more technical and professional skills")
-            scores['improvement_priority'].append(("Expand Skills Section", "High"))
-        elif total_skills < 15:
-            skills_points -= 8
-            scores['feedback'].append("Consider adding more diverse skills")
-            scores['improvement_priority'].append(("Diversify Skills", "Medium"))
-        
-        # Check for core technical skills
-        if not any(skills_by_category[cat] for cat in ['programming_languages', 'frameworks_libraries']):
-            skills_points -= 5
-            scores['feedback'].append("Add core technical skills (programming languages/frameworks)")
-            scores['improvement_priority'].append(("Add Technical Skills", "High"))
-        
-        # Check for balanced skill distribution
-        if len([cat for cat, count in skill_distribution.items() if count > 0]) < 3:
-            skills_points -= 5
-            scores['feedback'].append("Add skills from more categories for better balance")
-            scores['improvement_priority'].append(("Balance Skills", "Medium"))
-        
-        scores['skills_score'] = max(0, skills_points)
-        
-        # Keyword and Relevance Score (25 points)
-        keyword_points = 25
-        if job_description:
-            # Calculate TF-IDF similarity
+
+        scores['content_score'] = min(25, content_points)
+
+        # Skills Score (25 points max) — strict for technical roles
+        skills_points = 0
+        if total_skills >= 12:
+            skills_points += 10
+        elif total_skills >= 8:
+            skills_points += 7
+        elif total_skills >= 4:
+            skills_points += 4
+        elif total_skills >= 1:
+            skills_points += 2
+        else:
+            scores['feedback'].append("No technical or professional skills detected")
+            scores['improvement_priority'].append(("Add Skills Section", "Critical"))
+
+        if programming_skills:
+            skills_points += min(8, len(programming_skills) * 2)
+        elif is_technical:
+            scores['feedback'].append(
+                f"No programming languages found — required for {target_role or 'this technical role'}"
+            )
+            scores['improvement_priority'].append(("Add Programming Languages", "Critical"))
+
+        if framework_skills:
+            skills_points += min(4, len(framework_skills))
+        elif is_technical:
+            scores['feedback'].append("Add frameworks/libraries relevant to the target role")
+            scores['improvement_priority'].append(("Add Frameworks", "High"))
+
+        active_categories = len([cat for cat, skills in skills_by_category.items() if skills])
+        if active_categories >= 3:
+            skills_points += 3
+        elif active_categories >= 2:
+            skills_points += 1
+
+        scores['skills_score'] = min(25, skills_points)
+
+        # Keyword / Role Match Score (25 points max)
+        keyword_points = 0
+        if reference_text.strip():
             vectorizer = TfidfVectorizer(stop_words='english')
             try:
-                tfidf_matrix = vectorizer.fit_transform([text.lower(), job_description.lower()])
+                tfidf_matrix = vectorizer.fit_transform([text.lower(), reference_text.lower()])
                 similarity = (tfidf_matrix * tfidf_matrix.T).toarray()[0][1]
                 keyword_points = int(similarity * 25)
-                
-                # Extract key terms from job description
-                job_doc = self.nlp(job_description.lower())
-                key_terms = [token.text for token in job_doc 
-                           if not token.is_stop and not token.is_punct
-                           and len(token.text) > 2]
-                
-                # Find missing important terms
-                missing_terms = [term for term in set(key_terms) 
-                               if term not in text.lower() 
-                               and len(term) > 3]
-                
-                if missing_terms:
-                    scores['feedback'].append(f"Consider adding these keywords: {', '.join(missing_terms[:5])}")
-                    scores['improvement_priority'].append(("Add Job Keywords", "High"))
-                
-                if similarity < 0.3:
-                    scores['feedback'].append("Resume doesn't match job description well - tailor it more")
-                    scores['improvement_priority'].append(("Improve Job Match", "High"))
-            except Exception as e:
-                keyword_points = 15
-        
-        scores['keyword_score'] = max(0, keyword_points)
-        
-        # Readability Score (10 points)
+
+                expected_skills = self._expected_skills_for_role(target_role)
+                if expected_skills:
+                    missing = sorted(
+                        skill for skill in expected_skills
+                        if not self._skill_in_text(skill, text)
+                    )
+                    scores['missing_role_skills'] = missing
+                    if missing:
+                        penalty = min(15, len(missing) * 3)
+                        keyword_points = max(0, keyword_points - penalty)
+                        scores['feedback'].append(
+                            f"Missing role-critical skills: {', '.join(missing[:6])}"
+                        )
+                        scores['improvement_priority'].append(("Add Role-Critical Skills", "Critical"))
+
+                if similarity < 0.2:
+                    scores['feedback'].append(
+                        f"Resume content does not align well with the target role: {target_role or 'specified role'}"
+                    )
+                    scores['improvement_priority'].append(("Improve Role Alignment", "High"))
+            except Exception:
+                keyword_points = 5
+        else:
+            keyword_points = 3
+            scores['feedback'].append("Specify a target role to improve role-match scoring")
+
+        scores['keyword_score'] = max(0, min(25, keyword_points))
+
+        # Readability Score (10 points max)
         readability_points = 10
-        
-        # Check sentence length and complexity
         sentences = list(doc.sents)
-        avg_sentence_length = sum(len(sent) for sent in sentences) / len(sentences) if sentences else 0
-        
+        avg_sentence_length = (
+            sum(len(sent) for sent in sentences) / len(sentences) if sentences else 0
+        )
         if avg_sentence_length > 25:
             readability_points -= 3
-            scores['feedback'].append("Simplify sentences for better readability")
-            scores['improvement_priority'].append(("Simplify Sentences", "Medium"))
-        
-        # Check for passive voice
-        passive_constructs = sum(1 for sent in sentences 
-                               if any(token.dep_ == 'auxpass' for token in sent))
-        if passive_constructs > len(sentences) * 0.3:
-            readability_points -= 3
-            scores['feedback'].append("Use more active voice in descriptions")
-            scores['improvement_priority'].append(("Use Active Voice", "Medium"))
-        
+            scores['feedback'].append("Simplify long sentences for better readability")
+        passive_constructs = sum(
+            1 for sent in sentences if any(token.dep_ == 'auxpass' for token in sent)
+        )
+        if sentences and passive_constructs > len(sentences) * 0.3:
+            readability_points -= 2
+            scores['feedback'].append("Prefer active voice in achievement statements")
+
         scores['readability_score'] = max(0, readability_points)
-        
-        # Calculate total score
-        scores['total_score'] = (
+
+        raw_total = (
             scores['format_score'] +
             scores['content_score'] +
             scores['skills_score'] +
             scores['keyword_score'] +
             scores['readability_score']
         )
-        
-        # Add final recommendations based on total score
-        if scores['total_score'] < 70:
-            scores['feedback'].append("Consider professional resume review for major improvements")
-            scores['improvement_priority'].append(("Professional Review", "High"))
-        elif scores['total_score'] < 85:
-            scores['feedback'].append("Good foundation, focus on high-priority improvements")
-            scores['improvement_priority'].append(("Targeted Improvements", "Medium"))
-        
+
+        # Completeness penalty — prevents inflated scores on sparse resumes
+        completeness_penalty = 0
+        if word_count < 120:
+            completeness_penalty += 25
+        elif word_count < 200:
+            completeness_penalty += 15
+        elif word_count < 300:
+            completeness_penalty += 8
+
+        if is_technical and not programming_skills:
+            completeness_penalty += 20
+
+        if total_skills == 0:
+            completeness_penalty += 15
+
+        if not sections.get('skills') and 'technical skills' not in sections and total_skills < 3:
+            completeness_penalty += 10
+
+        scores['total_score'] = max(0, min(100, raw_total - completeness_penalty))
+
+        if scores['total_score'] < 50:
+            scores['feedback'].insert(
+                0,
+                "Resume is incomplete or missing fundamentals for the target role — score reflects actual readiness"
+            )
+        elif scores['total_score'] < 70:
+            scores['feedback'].append("Focus on high-priority improvements before applying")
+        elif scores['total_score'] >= 85:
+            scores['feedback'].append("Strong ATS alignment for the specified role")
+
         return scores
 
     def get_parsed_data(self, file) -> Dict[str, Any]:
@@ -467,5 +559,8 @@ class ResumeParser:
             'sections': sections,
             'skills': list(skills),
             'word_count': len(text.split()),
-            'scores': self.calculate_ats_score(text)
+            'scores': self.calculate_ats_score(
+                text,
+                target_role=sections.get('role'),
+            )
         } 
