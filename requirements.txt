@@ -17,4 +17,4 @@ plotly>=5.19.0
 python-dotenv>=1.0.1
 
 # after installing packages, run this command to download the spacy model
-python -m spacy download en_core_web_lg
+# python -m spacy download en_core_web_lg
